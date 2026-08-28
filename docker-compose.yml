@@ -1,0 +1,80 @@
+# Local development stack.
+#
+#   docker compose up -d db     # just Postgres, run the apps on the host
+#   docker compose up --build   # everything in containers
+#
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: connect4
+      POSTGRES_PASSWORD: connect4
+      POSTGRES_DB: connect4gg
+    ports:
+      - '5432:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U connect4 -d connect4gg']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # S3-compatible object storage for profile photos. The server falls back to
+  # local disk when STORAGE_DRIVER=local, so this is optional in dev.
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: connect4
+      MINIO_ROOT_PASSWORD: connect4secret
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://connect4:connect4@db:5432/connect4gg
+      PORT: '4000'
+      NODE_ENV: development
+      SESSION_SECRET: dev-secret-change-me-in-production-please
+      CLIENT_ORIGIN: http://localhost:5173
+      STORAGE_DRIVER: local
+      UPLOAD_DIR: /app/uploads
+    ports:
+      - '4000:4000'
+    volumes:
+      - uploads:/app/uploads
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - server
+    environment:
+      VITE_API_URL: http://localhost:4000
+    ports:
+      - '5173:5173'
+
+volumes:
+  db-data:
+  minio-data:
+  uploads:

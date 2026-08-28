@@ -1,0 +1,22 @@
+{
+  "name": "connect4gg",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Connect4.gg — a competitive, ranked, real-time Connect 4 platform.",
+  "workspaces": [
+    "packages/*",
+    "server",
+    "web"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "npm run build -w @connect4gg/engine && npm run build -w @connect4gg/server && npm run build -w @connect4gg/web",
+    "dev": "npm run dev -w @connect4gg/server & npm run dev -w @connect4gg/web",
+    "test": "npm run test -w @connect4gg/engine && npm run test -w @connect4gg/server",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "db:migrate": "npm run db:migrate -w @connect4gg/server",
+    "db:seed": "npm run db:seed -w @connect4gg/server"
+  }
+}

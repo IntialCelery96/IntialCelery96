@@ -1,0 +1,251 @@
+// Connect4.gg data model.
+//
+// Ratings, rating history and leaderboards are all keyed by (user, mode), so a
+// player's Blitz strength is tracked independently of their Classical strength
+// exactly the way a chess site does it.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  // Null for accounts created through Google OAuth that never set a password.
+  passwordHash  String?
+  googleId      String?   @unique
+
+  // Null until the new-account setup flow completes. Unique when set.
+  username      String?   @unique
+  // Case-insensitive uniqueness is enforced through this mirrored column.
+  usernameLower String?   @unique
+  avatarUrl     String?
+  bio           String?   @db.VarChar(300)
+  country       String?   @db.VarChar(2)
+
+  // Username changes are rate limited to one per USERNAME_COOLDOWN_DAYS.
+  usernameChangedAt DateTime?
+  setupComplete     Boolean  @default(false)
+  isBot             Boolean  @default(false)
+
+  createdAt     DateTime  @default(now())
+  lastSeenAt    DateTime  @default(now())
+
+  sessions        Session[]
+  ratings         Rating[]
+  ratingHistory   RatingHistory[]
+  gamesAsPlayer1  Game[]     @relation("Player1")
+  gamesAsPlayer2  Game[]     @relation("Player2")
+  gamesWon        Game[]     @relation("Winner")
+  challengesSent      Challenge[] @relation("Challenger")
+  challengesReceived  Challenge[] @relation("Challenged")
+  following       Follow[]   @relation("Follower")
+  followers       Follow[]   @relation("Following")
+
+  @@index([usernameLower])
+  @@index([createdAt])
+}
+
+// Server-side sessions. The browser holds only an opaque token in an httpOnly
+// cookie, so revoking a session is a single row delete.
+model Session {
+  id        String   @id @default(cuid())
+  // SHA-256 of the cookie value. A database leak does not hand over live
+  // sessions.
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userAgent String?
+  ip        String?
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Rating {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mode     String
+
+  rating   Int    @default(1200)
+  // Rated games completed in this mode. Drives the provisional K-factor.
+  games    Int    @default(0)
+  wins     Int    @default(0)
+  losses   Int    @default(0)
+  draws    Int    @default(0)
+  peak     Int    @default(1200)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, mode])
+  // Leaderboards read this index directly.
+  @@index([mode, rating])
+}
+
+// One row per rated game per player, for the profile rating graph.
+model RatingHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mode      String
+  rating    Int
+  delta     Int
+  gameId    String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, mode, createdAt])
+}
+
+enum GameResult {
+  PLAYER1_WIN
+  PLAYER2_WIN
+  DRAW
+  ABORTED
+}
+
+enum EndReason {
+  CONNECT_FOUR
+  BOARD_FULL
+  RESIGNATION
+  TIMEOUT
+  DRAW_AGREED
+  ABANDONED
+  ABORTED
+}
+
+model Game {
+  id     String @id @default(cuid())
+  mode   String
+  rated  Boolean @default(true)
+
+  // Player 1 always moves first. Either side may be a bot, in which case the
+  // *Id column is null and the matching *BotId carries the bot's identifier.
+  player1Id   String?
+  player1      User?   @relation("Player1", fields: [player1Id], references: [id], onDelete: SetNull)
+  player2Id   String?
+  player2      User?   @relation("Player2", fields: [player2Id], references: [id], onDelete: SetNull)
+  player1BotId String?
+  player2BotId String?
+
+  // Column of each move, in order, e.g. "3342". Replaying this reconstructs
+  // the whole game, so no board snapshot is stored.
+  moves      String  @default("")
+
+  result     GameResult?
+  endReason  EndReason?
+  winnerId   String?
+  winner     User?    @relation("Winner", fields: [winnerId], references: [id], onDelete: SetNull)
+
+  // Clock settings copied from the mode at creation, so changing a mode's time
+  // control later does not rewrite the history of games already played.
+  initialMs   Int
+  incrementMs Int
+  // Time remaining when the game ended, for the replay UI.
+  player1TimeMs Int?
+  player2TimeMs Int?
+
+  // Rating movement, recorded for the post-game screen.
+  player1RatingBefore Int?
+  player2RatingBefore Int?
+  player1RatingDelta  Int?
+  player2RatingDelta  Int?
+
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+
+  @@index([player1Id, startedAt])
+  @@index([player2Id, startedAt])
+  @@index([mode, startedAt])
+  @@index([endedAt])
+}
+
+enum ChallengeStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+  EXPIRED
+}
+
+// A direct invitation to a specific opponent, bypassing the matchmaking queue.
+model Challenge {
+  id           String @id @default(cuid())
+  challengerId String
+  challenger   User   @relation("Challenger", fields: [challengerId], references: [id], onDelete: Cascade)
+  challengedId String
+  challenged   User   @relation("Challenged", fields: [challengedId], references: [id], onDelete: Cascade)
+
+  mode   String
+  rated  Boolean @default(true)
+  status ChallengeStatus @default(PENDING)
+  gameId String?
+
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([challengedId, status])
+  @@index([challengerId, status])
+}
+
+// Directed follows. A mutual pair is rendered as a friendship in the UI.
+model Follow {
+  id          String @id @default(cuid())
+  followerId  String
+  follower    User   @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User   @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+}
+
+// --- Curriculum -------------------------------------------------------------
+// Scaffold only. The content model is complete so lessons can be added as data
+// rather than code; see docs/curriculum-roadmap.md for what goes here next.
+
+model Lesson {
+  id         String @id @default(cuid())
+  slug       String @unique
+  title      String
+  summary    String
+  difficulty String
+  // Ordered LessonBlock[] — see packages/engine/src/curriculum.ts.
+  blocks     Json
+  order      Int    @default(0)
+  published  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([difficulty, order])
+}
+
+model Puzzle {
+  id          String @id @default(cuid())
+  slug        String @unique
+  title       String
+  difficulty  String
+  // Columns replayed from an empty board to reach the starting position.
+  moves       String
+  // Which colour the solver plays: 1 or 2.
+  solver      Int
+  // Accepted answers, as a JSON array of column indices.
+  answers     Json
+  explanation String
+  order       Int    @default(0)
+  published   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([difficulty, order])
+}
