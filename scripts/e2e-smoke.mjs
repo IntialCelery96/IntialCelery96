@@ -10,7 +10,8 @@
  */
 import { io } from 'socket.io-client';
 
-const API = 'http://localhost:4000';
+// Override with API_URL to point at a deployed server.
+const API = process.env.API_URL ?? 'http://localhost:4000';
 const stamp = Date.now();
 
 async function api(path, options = {}, cookie) {

@@ -49,7 +49,9 @@ const centerColumnControl: Lesson = {
       kind: 'board',
       caption: 'Red owns the center; Yellow has taken an edge and is already worse.',
       moves: [3, 0, 3],
-      highlight: [3, 10, 17],
+      // Both of Red's centre discs: indices 3 and 10 are the bottom two cells
+      // of column 4. Highlighting an empty square would just ring nothing.
+      highlight: [3, 10],
     },
     {
       kind: 'tryIt',

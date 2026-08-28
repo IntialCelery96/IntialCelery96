@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: connect4
+          POSTGRES_PASSWORD: connect4
+          POSTGRES_DB: connect4gg
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://connect4:connect4@localhost:5432/connect4gg
+      SESSION_SECRET: ci-secret-not-used-in-production-at-all
+      CLIENT_ORIGIN: http://localhost:5173
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # The engine has to be built before the server and web can typecheck
+      # against it.
+      - run: npm run build -w @connect4gg/engine
+
+      - run: npx prisma generate --schema server/prisma/schema.prisma
+
+      - run: npx prisma migrate deploy --schema server/prisma/schema.prisma
+
+      - run: npm run typecheck
+
+      - run: npm test
+
+      - run: npm run build -w @connect4gg/web
+
+      # Guards the bot roster: every bot must still beat the one below it.
+      - run: node scripts/bot-ladder.mjs 4

@@ -1,0 +1,176 @@
+# Connect4.gg
+
+A competitive Connect 4 platform — ranked real-time games against other players,
+with ELO ratings per time control, skill-based matchmaking, bot opponents, and a
+strategy curriculum.
+
+![board](docs/board.png)
+
+## What's here
+
+| Feature | Status |
+| --- | --- |
+| Email/password + Google OAuth accounts | ✅ |
+| One-time profile setup (username, avatar, bio, country) | ✅ |
+| Per-mode ELO with provisional K-factor and rating history | ✅ |
+| Matchmaking with widening rating bands | ✅ |
+| Direct challenges by username | ✅ |
+| Blitz / Rapid / Classical / Casual time controls | ✅ |
+| Server-authoritative gameplay with chess-style clocks | ✅ |
+| Six bot opponents with distinct skill *and* strategy | ✅ |
+| Resign, draw offers, rematch, reconnect handling | ✅ |
+| Replay scrubber and spectator links | ✅ |
+| Leaderboards, profiles, rating graphs, user search, follows | ✅ |
+| Strategy curriculum | 🚧 scaffold — one lesson, one puzzle, [roadmap](docs/curriculum-roadmap.md) |
+| Post-game analysis | 🚧 stub — *Analyze* opens the replay |
+
+## Stack
+
+- **Frontend** — React 18 + TypeScript + Tailwind, built with Vite
+- **Backend** — Fastify + TypeScript, Socket.IO for realtime
+- **Database** — PostgreSQL via Prisma
+- **Engine** — a dependency-free TypeScript package shared by both, so the
+  browser and the server agree on the rules by construction
+- **Storage** — local disk in dev, any S3-compatible bucket in production
+
+## Layout
+
+```
+packages/engine/   Game rules, ELO, mode config, bots. Pure logic, no I/O.
+server/            Fastify API, Socket.IO gateway, Prisma schema.
+web/               React SPA.
+scripts/           Bot ladder benchmark and an end-to-end smoke test.
+docs/              Curriculum roadmap.
+```
+
+The engine is a real package rather than a folder of helpers: the server needs
+it to validate moves authoritatively, the client needs it to render boards and
+replays, and a shared package is what stops those two implementations drifting.
+
+## Running it
+
+### With Docker
+
+```bash
+cp .env.example .env      # edit SESSION_SECRET before anything public
+docker compose up --build
+```
+
+The app is on http://localhost:5173, the API on http://localhost:4000.
+
+### Locally
+
+You need Node 20+ and a PostgreSQL 14+ instance.
+
+```bash
+npm install
+docker compose up -d db          # or point DATABASE_URL at your own Postgres
+
+cp .env.example server/.env      # set DATABASE_URL and SESSION_SECRET
+npm run db:migrate -w @connect4gg/server
+npm run db:seed -w @connect4gg/server
+
+npm run build -w @connect4gg/engine
+npm run dev -w @connect4gg/server   # :4000
+npm run dev -w @connect4gg/web      # :5173
+```
+
+Vite proxies `/api` and `/socket.io` to the server in dev, so everything is
+same-origin and the session cookie works without any CORS configuration.
+
+### Google OAuth (optional)
+
+Create OAuth credentials at the [Google Cloud
+Console](https://console.cloud.google.com/apis/credentials) with the redirect
+URI `http://localhost:4000/api/auth/google/callback`, then set
+`GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. Leave them blank and the
+"Continue with Google" button simply doesn't render.
+
+## Tests
+
+```bash
+npm test                            # engine + server unit tests
+npm run typecheck                   # all three workspaces
+node scripts/bot-ladder.mjs 10      # verify the bot ladder still holds
+node scripts/e2e-smoke.mjs          # end-to-end, needs a running server
+```
+
+- **139 unit tests.** The engine's rules, ELO maths, matchmaking bands and bot
+  behaviour; the server's clocks, queue and live-game state machine.
+- **`scripts/e2e-smoke.mjs`** registers two throwaway accounts and drives the
+  real socket protocol: queueing, pairing, move rejection, a full game, rating
+  updates, persistence, a bot game, and the auth guards.
+
+## Design notes
+
+**The server owns the game.** Clients send a column number and nothing else.
+The server looks the game up, checks the socket's session owns a seat in it, and
+validates the move against its own board. No board state is ever accepted from a
+client, so a tampered client can at worst send an illegal move and have it
+rejected.
+
+**Clocks are stored, not run.** A clock is `{ balance, lastTickAt, running }`
+rather than a countdown timer, so the true remaining time is always derivable
+from the wall clock. That makes it safe to broadcast, cheap to snapshot, and
+impossible for a client to influence. The browser extrapolates between snapshots
+so the display ticks smoothly, but a local clock hitting zero never ends a game —
+only the server's does.
+
+**A disconnect pauses the clock.** Losing on time to a dropped WiFi connection
+is the fastest way to make someone stop playing, so a dropped socket pauses that
+player's clock and starts a 60-second grace period. Reconnecting inside it
+resumes exactly where they left off.
+
+**Bots differ in strategy, not just depth.** Each bot has an evaluation style —
+weights for centre control, threat building, defence, and odd/even parity — on
+top of its search depth and blunder rate. Bastion at depth 7 genuinely plays a
+different game from Vex at depth 5, not just a stronger one. `scripts/bot-ladder.mjs`
+verifies each bot still beats the one below it; re-run it after touching any
+bot's configuration.
+
+**Bot search runs in a worker thread.** The strongest bot searches nine plies,
+which is over a second of solid CPU. On the event loop that would stall every
+other socket on the server, so searches are offloaded and fall back inline if
+the worker is unavailable.
+
+**Ratings are per mode.** Blitz strength and Classical strength are genuinely
+different skills, so they are tracked separately, exactly as a chess site does.
+New accounts use a K-factor of 40 for their first 30 games, then drop to 20.
+
+## Deploying
+
+Both services are plain Docker images and run anywhere that takes one.
+
+**Fly.io**
+
+```bash
+fly launch --dockerfile server/Dockerfile --name connect4gg-api
+fly postgres create --name connect4gg-db
+fly postgres attach connect4gg-db          # sets DATABASE_URL
+fly secrets set SESSION_SECRET="$(openssl rand -base64 48)" \
+                CLIENT_ORIGIN="https://your-web-host"
+fly deploy
+```
+
+**Railway** — create a project, add a PostgreSQL plugin, then add two services
+pointing at `server/Dockerfile` and `web/Dockerfile`. Railway injects
+`DATABASE_URL` automatically; set `SESSION_SECRET` and `CLIENT_ORIGIN` yourself.
+
+Whichever host you use:
+
+- **`SESSION_SECRET` must be a real secret.** The server refuses to start in
+  production with the development default.
+- **Set `CLIENT_ORIGIN`** to the browser app's URL — it drives CORS and the
+  OAuth redirect.
+- **Point avatars at object storage.** `STORAGE_DRIVER=local` writes to the
+  container filesystem, which is ephemeral on both hosts. Set `STORAGE_DRIVER=s3`
+  and the `S3_*` variables for anything real.
+- **Migrations run on boot** (`prisma migrate deploy`), so a deploy never serves
+  against a stale schema.
+- **Live games are in memory.** A restart ends them. Fine for a single instance;
+  running more than one requires a Socket.IO Redis adapter and moving game state
+  out of process.
+
+## License
+
+MIT
