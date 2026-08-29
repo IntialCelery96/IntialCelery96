@@ -60,9 +60,16 @@ export interface ClientToServerEvents {
   'game:rematch': (payload: unknown) => void;
 }
 
+/**
+ * Per-socket identity.
+ *
+ * Null for anonymous visitors, who may connect but only to spectate — a
+ * spectator link is meant to be shareable with people who have no account.
+ * Every event that changes game state checks for a userId first.
+ */
 export interface SocketData {
-  userId: string;
-  username: string;
+  userId: string | null;
+  username: string | null;
 }
 
 export type InterServerEvents = Record<string, never>;

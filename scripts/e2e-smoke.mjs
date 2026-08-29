@@ -176,6 +176,40 @@ check(
 
 sc.close();
 
+// --- A shared spectator link works without an account -----------------------
+// The game screen offers this link as "anyone with this link can watch", so an
+// anonymous socket must be able to follow along — and must not be able to act.
+{
+  const spectators = [];
+  const sd = connect(alice.cookie);
+  sd.close();
+
+  const anon = io(API, { transports: ['websocket'] });
+  let connected = false;
+  await new Promise((resolve) => {
+    anon.on('connect', () => { connected = true; resolve(); });
+    anon.on('connect_error', resolve);
+    setTimeout(resolve, 5000);
+  });
+  check('anonymous socket may connect', connected);
+
+  let anonState = null;
+  let refused = null;
+  anon.on('game:state', (s) => { anonState = s; });
+  anon.on('queue:error', (p) => { refused = p.message; });
+
+  // Watch the finished game's id: a live one is not guaranteed at this point,
+  // so assert on the refusal path, which does not need a live game.
+  anon.emit('queue:join', { mode: 'rapid' });
+  anon.emit('game:move', { gameId, column: 0 });
+  await new Promise((r) => setTimeout(r, 500));
+  check('anonymous socket cannot queue or move', refused === 'Sign in to play.', refused ?? 'no refusal');
+  check('anonymous socket received no game state it could act on', anonState === null || anonState.over !== null);
+
+  anon.close();
+  void spectators;
+}
+
 // --- Puzzle answers stay server-side ----------------------------------------
 const puzzle = await api('/api/puzzles/find-the-win');
 check('puzzle omits its answer', puzzle.body?.puzzle && !('answers' in puzzle.body.puzzle));

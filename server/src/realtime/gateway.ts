@@ -141,42 +141,67 @@ export function createGateway(httpServer: HttpServer): {
   }
 
   // --- Authentication -------------------------------------------------------
-  // The session cookie is the only credential. A socket that cannot be resolved
-  // to a set-up account is refused, so every connected socket has an identity.
+  // The session cookie is the only credential, and it is optional: a socket
+  // that cannot be resolved to a set-up account still connects, but with a null
+  // userId. Those sockets can join a room and receive broadcasts and nothing
+  // else, which is what makes a spectator link shareable with someone who has
+  // no account. Every state-changing handler calls `playerId` first.
 
   io.use(async (socket, next) => {
+    const typed = socket as GameSocket;
     try {
       const token = parseSessionCookieHeader(socket.handshake.headers.cookie);
       const user = await resolveSession(token);
 
-      if (!user) return next(new Error('UNAUTHENTICATED'));
-      if (!user.setupComplete || !user.username) return next(new Error('SETUP_REQUIRED'));
-
-      (socket as GameSocket).data.userId = user.id;
-      (socket as GameSocket).data.username = user.username;
+      if (user?.setupComplete && user.username) {
+        typed.data.userId = user.id;
+        typed.data.username = user.username;
+      } else {
+        typed.data.userId = null;
+        typed.data.username = null;
+      }
       next();
     } catch (error) {
-      next(error instanceof Error ? error : new Error('AUTH_FAILED'));
+      // A failed session lookup downgrades to spectator rather than refusing
+      // the connection outright.
+      typed.data.userId = null;
+      typed.data.username = null;
+      next();
     }
   });
 
   io.on('connection', (raw) => {
     const socket = raw as GameSocket;
-    const { userId, username } = socket.data;
 
-    // A player's own room, so a challenge can be delivered wherever they are.
-    void socket.join(`user:${userId}`);
+    /**
+     * The signed-in account behind this socket, or null after telling the
+     * client why it cannot act. Anonymous sockets reach every read-only path
+     * and none of the others.
+     */
+    function playerId(): string | null {
+      if (socket.data.userId) return socket.data.userId;
+      socket.emit('queue:error', { message: 'Sign in to play.' });
+      return null;
+    }
 
-    // Reconnecting mid-game: point the client straight back at it.
-    const active = manager.activeGameFor(userId);
-    if (active) {
-      socket.emit('game:resume', { gameId: active.id });
+    const { userId } = socket.data;
+
+    if (userId) {
+      // A player's own room, so a challenge can be delivered wherever they are.
+      void socket.join(`user:${userId}`);
+
+      // Reconnecting mid-game: point the client straight back at it.
+      const active = manager.activeGameFor(userId);
+      if (active) {
+        socket.emit('game:resume', { gameId: active.id });
+      }
     }
 
     // --- Matchmaking --------------------------------------------------------
 
     socket.on('queue:join', async (payload: unknown) => {
-      if (limited(socket)) return;
+      const userId = playerId();
+      if (!userId || limited(socket)) return;
 
       const parsed = queueSchema.safeParse(payload);
       if (!parsed.success || !isGameModeId(parsed.data.mode)) {
@@ -194,19 +219,27 @@ export function createGateway(httpServer: HttpServer): {
         ? (await getOrCreateRating(userId, mode)).rating
         : 1200;
 
-      matchmaker.join({ userId, socketId: socket.id, username, rating, mode });
+      matchmaker.join({
+        userId,
+        socketId: socket.id,
+        username: socket.data.username ?? 'Player',
+        rating,
+        mode,
+      });
       socket.emit('queue:status', matchmaker.statusFor(userId));
     });
 
     socket.on('queue:leave', () => {
-      matchmaker.leave(userId);
+      if (!socket.data.userId) return;
+      matchmaker.leave(socket.data.userId);
       socket.emit('queue:left', {});
     });
 
     // --- Playing against a bot ---------------------------------------------
 
     socket.on('bot:play', async (payload: unknown) => {
-      if (limited(socket)) return;
+      const userId = playerId();
+      if (!userId || limited(socket)) return;
 
       const parsed = botSchema.safeParse(payload);
       if (!parsed.success || !isGameModeId(parsed.data.mode) || !isBotId(parsed.data.botId)) {
@@ -222,7 +255,7 @@ export function createGateway(httpServer: HttpServer): {
       const mode = parsed.data.mode as GameModeId;
       matchmaker.leave(userId);
 
-      const human = await manager.humanSeat(userId, mode, username);
+      const human = await manager.humanSeat(userId, mode, socket.data.username ?? 'Player');
       const bot = manager.botSeat(parsed.data.botId);
 
       const humanFirst =
@@ -246,7 +279,8 @@ export function createGateway(httpServer: HttpServer): {
     // --- Direct challenges --------------------------------------------------
 
     socket.on('challenge:send', async (payload: unknown) => {
-      if (limited(socket)) return;
+      const userId = playerId();
+      if (!userId || limited(socket)) return;
 
       const parsed = challengeSchema.safeParse(payload);
       if (!parsed.success || !isGameModeId(parsed.data.mode)) {
@@ -281,14 +315,15 @@ export function createGateway(httpServer: HttpServer): {
       socket.emit('challenge:sent', { id: challenge.id, to: target.username });
       io.to(`user:${target.id}`).emit('challenge:received', {
         id: challenge.id,
-        from: username,
+        from: socket.data.username ?? 'A player',
         mode: parsed.data.mode,
         rated: challenge.rated,
       });
     });
 
     socket.on('challenge:accept', async (payload: unknown) => {
-      if (limited(socket)) return;
+      const userId = playerId();
+      if (!userId || limited(socket)) return;
 
       const parsed = z.object({ id: z.string().min(1).max(64) }).safeParse(payload);
       if (!parsed.success) return;
@@ -317,7 +352,7 @@ export function createGateway(httpServer: HttpServer): {
 
       const [challenger, challenged] = await Promise.all([
         manager.humanSeat(challenge.challengerId, mode),
-        manager.humanSeat(userId, mode, username),
+        manager.humanSeat(userId, mode, socket.data.username ?? 'Player'),
       ]);
 
       // The challenger takes the first move, as they proposed the game.
@@ -342,6 +377,9 @@ export function createGateway(httpServer: HttpServer): {
     });
 
     socket.on('challenge:decline', async (payload: unknown) => {
+      const userId = socket.data.userId;
+      if (!userId) return;
+
       const parsed = z.object({ id: z.string().min(1).max(64) }).safeParse(payload);
       if (!parsed.success) return;
 
@@ -353,7 +391,10 @@ export function createGateway(httpServer: HttpServer): {
       if (challenge.count > 0) {
         const row = await prisma.challenge.findUnique({ where: { id: parsed.data.id } });
         if (row) {
-          io.to(`user:${row.challengerId}`).emit('challenge:declined', { id: row.id, by: username });
+          io.to(`user:${row.challengerId}`).emit('challenge:declined', {
+            id: row.id,
+            by: socket.data.username ?? 'A player',
+          });
         }
       }
     });
@@ -361,6 +402,10 @@ export function createGateway(httpServer: HttpServer): {
     // --- In-game ------------------------------------------------------------
 
     socket.on('game:join', (payload: unknown) => {
+      // Rate limited because this is the one handler an anonymous socket can
+      // reach, and joining a room is not free.
+      if (limited(socket)) return;
+
       const parsed = gameIdSchema.safeParse(payload);
       if (!parsed.success) return;
 
@@ -372,7 +417,9 @@ export function createGateway(httpServer: HttpServer): {
 
       void socket.join(roomFor(game.id));
 
-      const seat = game.seatOf(userId);
+      // An anonymous socket never owns a seat, so it always lands in the
+      // spectator branch below.
+      const seat = socket.data.userId ? game.seatOf(socket.data.userId) : null;
       if (seat !== null) {
         const { resumed } = game.attach(seat, socket.id);
         if (resumed) io.to(roomFor(game.id)).emit('game:resumed', { player: seat });
@@ -398,6 +445,9 @@ export function createGateway(httpServer: HttpServer): {
     });
 
     socket.on('game:move', (payload: unknown) => {
+      const userId = playerId();
+      if (!userId) return;
+
       const parsed = moveSchema.safeParse(payload);
       if (!parsed.success) {
         socket.emit('game:rejected', { message: 'Invalid move' });
@@ -420,6 +470,8 @@ export function createGateway(httpServer: HttpServer): {
     });
 
     socket.on('game:resign', (payload: unknown) => {
+      const userId = socket.data.userId;
+      if (!userId) return;
       const parsed = gameIdSchema.safeParse(payload);
       if (!parsed.success) return;
       const game = manager.get(parsed.data.gameId);
@@ -427,7 +479,8 @@ export function createGateway(httpServer: HttpServer): {
     });
 
     socket.on('game:offerDraw', (payload: unknown) => {
-      if (limited(socket)) return;
+      const userId = socket.data.userId;
+      if (!userId || limited(socket)) return;
       const parsed = gameIdSchema.safeParse(payload);
       if (!parsed.success) return;
       const game = manager.get(parsed.data.gameId);
@@ -435,6 +488,8 @@ export function createGateway(httpServer: HttpServer): {
     });
 
     socket.on('game:declineDraw', (payload: unknown) => {
+      const userId = socket.data.userId;
+      if (!userId) return;
       const parsed = gameIdSchema.safeParse(payload);
       if (!parsed.success) return;
       const game = manager.get(parsed.data.gameId);
@@ -446,7 +501,8 @@ export function createGateway(httpServer: HttpServer): {
      * asks too, a new game is created with the colours swapped.
      */
     socket.on('game:rematch', async (payload: unknown) => {
-      if (limited(socket)) return;
+      const userId = playerId();
+      if (!userId || limited(socket)) return;
 
       const parsed = gameIdSchema.safeParse(payload);
       if (!parsed.success) return;
@@ -474,7 +530,7 @@ export function createGateway(httpServer: HttpServer): {
       // Against a bot there is nobody to agree, so start immediately.
       const botId = finished.player1BotId ?? finished.player2BotId;
       if (botId) {
-        const human = await manager.humanSeat(userId, mode, username);
+        const human = await manager.humanSeat(userId, mode, socket.data.username ?? 'Player');
         const bot = manager.botSeat(botId);
         // Swap colours from the previous game.
         const humanWasFirst = finished.player1Id === userId;
@@ -501,7 +557,7 @@ export function createGateway(httpServer: HttpServer): {
 
         const [a, b] = await Promise.all([
           manager.humanSeat(opponentId, mode),
-          manager.humanSeat(userId, mode, username),
+          manager.humanSeat(userId, mode, socket.data.username ?? 'Player'),
         ]);
 
         // Colours swap so a rematch isn't the same game twice.
@@ -516,7 +572,7 @@ export function createGateway(httpServer: HttpServer): {
         io.to(`user:${opponentId}`).emit('game:matched', {
           gameId: game.id,
           mode,
-          opponent: username,
+          opponent: socket.data.username ?? 'A player',
         });
         socket.emit('game:matched', { gameId: game.id, mode, opponent: a.username });
         return;
@@ -529,12 +585,18 @@ export function createGateway(httpServer: HttpServer): {
 
       io.to(`user:${opponentId}`).emit('game:rematchOffered', {
         gameId: finished.id,
-        from: username,
+        from: socket.data.username ?? 'A player',
       });
     });
 
     socket.on('disconnect', () => {
       buckets.delete(socket.id);
+
+      // An anonymous spectator has no queue entry and no seat to vacate; the
+      // room membership goes away with the socket.
+      const userId = socket.data.userId;
+      if (!userId) return;
+
       matchmaker.leaveBySocket(socket.id);
 
       const game = manager.activeGameFor(userId);

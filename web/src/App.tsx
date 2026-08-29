@@ -34,6 +34,8 @@ export function App() {
         <Route path="/search" element={<SearchPage />} />
         <Route path="/profile/:username" element={<ProfilePage />} />
         <Route path="/replay/:gameId" element={<ReplayPage />} />
+        {/* Spectating is open to anyone with the link, account or not. */}
+        <Route path="/watch/:gameId" element={<WatchPage />} />
 
         <Route path="/learn" element={<LearnPage />} />
         <Route path="/learn/puzzle/:slug" element={<PuzzlePage />} />
@@ -63,14 +65,7 @@ export function App() {
             </RequireAuth>
           }
         />
-        <Route
-          path="/watch/:gameId"
-          element={
-            <RequireAuth>
-              <WatchPage />
-            </RequireAuth>
-          }
-        />
+
         <Route
           path="/settings"
           element={
