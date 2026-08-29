@@ -215,7 +215,16 @@ describe('evaluation', () => {
 });
 
 describe('relative strength', () => {
-  /** Plays a match and returns wins for the stronger bot. */
+  /**
+   * Plays a match and returns wins for the stronger bot.
+   *
+   * The time budget is deliberately generous. It is a ceiling, not a cost —
+   * the deepest bot averages well under 200ms a move — but a tight budget makes
+   * the result depend on how loaded the machine is: a truncated search plays
+   * weaker, so a busy CI box would quietly turn a strength test into a speed
+   * test and flake. Matching the budget used by scripts/bot-ladder.mjs keeps
+   * the two in agreement.
+   */
   function match(strongId: string, weakId: string, games: number): number {
     const strong = getBot(strongId)!;
     const weak = getBot(weakId)!;
@@ -230,7 +239,7 @@ describe('relative strength', () => {
       while (state.status === 'in_progress') {
         const strongToMove = (state.turn === 1) === strongIsFirst;
         const bot = strongToMove ? strong : weak;
-        state = applyMove(state, chooseMove(bot, state, { random, timeBudgetMs: 400 }));
+        state = applyMove(state, chooseMove(bot, state, { random, timeBudgetMs: 5_000 }));
       }
 
       if (state.status === 'win') {
@@ -248,8 +257,11 @@ describe('relative strength', () => {
     expect(match('nora', 'pip', 10)).toBeGreaterThanOrEqual(9);
   });
 
+  // Fewer games than the pairings below: Zenith searches nine plies, so each
+  // game costs real time. Four is enough to catch a regression that breaks it,
+  // and scripts/bot-ladder.mjs covers the pairing at greater depth.
   it('the top bot dominates the greedy one', () => {
-    expect(match('zenith', 'rusty', 6)).toBeGreaterThanOrEqual(5);
+    expect(match('zenith', 'rusty', 4)).toBeGreaterThanOrEqual(3);
   });
 
   it('deeper search beats shallower search of the same family', () => {

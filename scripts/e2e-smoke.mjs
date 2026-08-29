@@ -218,6 +218,44 @@ const right = await api('/api/puzzles/find-the-win/attempt', { method: 'POST', b
 check('puzzle grades attempts', wrong.body?.correct === false && right.body?.correct === true);
 check('explanation only on success', wrong.body?.explanation === null && typeof right.body?.explanation === 'string');
 
+// --- A password change revokes every other session --------------------------
+// People change their password because they think a session was stolen, so the
+// old sessions must die — but not the tab they are sitting in front of.
+{
+  const email = `pwcheck${stamp}@example.com`;
+  const first = await api('/api/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ email, password: 'hunter2hunter2' }),
+  });
+  await api('/api/setup', {
+    method: 'POST',
+    body: JSON.stringify({ username: `pwcheck${stamp}`.slice(0, 20) }),
+  }, first.cookie);
+
+  // A second sign-in stands in for a second device.
+  const second = await api('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password: 'hunter2hunter2' }),
+  });
+
+  const changed = await api('/api/auth/password', {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword: 'hunter2hunter2', newPassword: 'brandnewpassword1' }),
+  }, first.cookie);
+
+  check('password change succeeds', changed.status === 200, JSON.stringify(changed.body));
+  const otherAfter = await api('/api/auth/me', {}, second.cookie);
+  check('other devices are signed out', otherAfter.body?.user === null);
+  const selfAfter = await api('/api/auth/me', {}, changed.cookie);
+  check('the changing device stays signed in', selfAfter.body?.user !== null);
+
+  const oldPassword = await api('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password: 'hunter2hunter2' }),
+  });
+  check('the old password stops working', oldPassword.status === 401);
+}
+
 // --- Auth guards -------------------------------------------------------------
 const anon = await api('/api/games');
 check('protected route rejects anonymous', anon.status === 401, `status ${anon.status}`);

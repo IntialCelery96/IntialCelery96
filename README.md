@@ -133,6 +133,12 @@ which is over a second of solid CPU. On the event loop that would stall every
 other socket on the server, so searches are offloaded and fall back inline if
 the worker is unavailable.
 
+**Anonymous sockets can watch but not act.** A `/watch` link is meant to be
+shareable, so a socket without a session still connects — with a null identity.
+It can join a room and receive broadcasts; every state-changing handler resolves
+an account first. See [docs/security.md](docs/security.md) for the full review of
+the auth, upload, and realtime surfaces.
+
 **Ratings are per mode.** Blitz strength and Classical strength are genuinely
 different skills, so they are tracked separately, exactly as a chess site does.
 New accounts use a K-factor of 40 for their first 30 games, then drop to 20.

@@ -7,6 +7,7 @@ import { env, googleOAuthEnabled, isProduction } from '../lib/env.js';
 import {
   clearSessionCookie,
   createSession,
+  destroyAllSessions,
   destroySession,
   readSessionCookie,
   setSessionCookie,
@@ -177,7 +178,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
   app.post(
     '/api/auth/password',
     { preHandler: requireAuth, config: authRateLimit },
-    async (request) => {
+    async (request, reply) => {
       const body = z
         .object({
           currentPassword: z.string().min(1).max(200),
@@ -201,7 +202,24 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         data: { passwordHash: await argon2.hash(body.newPassword, HASH_OPTIONS) },
       });
 
-      return { ok: true };
+      // Revoke every existing session, then issue a new one for this device.
+      // A password change is usually a response to a suspected compromise, so
+      // leaving the other sessions alive would defeat the point — but signing
+      // the user out of the tab they just used would be needlessly hostile.
+      const revoked = await destroyAllSessions(user.id);
+      const token = await createSession({
+        userId: user.id,
+        userAgent: request.headers['user-agent'],
+        ip: request.ip,
+      });
+      setSessionCookie(reply, token);
+
+      return {
+        ok: true,
+        // Minus the one just replaced, so the client can say "signed out of N
+        // other devices".
+        otherSessionsRevoked: Math.max(0, revoked - 1),
+      };
     },
   );
 

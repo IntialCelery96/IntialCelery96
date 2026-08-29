@@ -98,9 +98,18 @@ export async function destroySession(token: string | undefined): Promise<void> {
     .catch(() => undefined);
 }
 
-/** Signs the user out everywhere — used after a password change. */
-export async function destroyAllSessions(userId: string): Promise<void> {
-  await prisma.session.deleteMany({ where: { userId } });
+/**
+ * Signs the user out of every device.
+ *
+ * Called after a password change: the main reason someone changes their
+ * password is that they think a session has been stolen, and leaving the old
+ * sessions valid would defeat the point. The caller is expected to mint a fresh
+ * session for the device that made the change, so the user is not signed out of
+ * the browser they are sitting in front of.
+ */
+export async function destroyAllSessions(userId: string): Promise<number> {
+  const { count } = await prisma.session.deleteMany({ where: { userId } });
+  return count;
 }
 
 export function setSessionCookie(reply: FastifyReply, token: string): void {
