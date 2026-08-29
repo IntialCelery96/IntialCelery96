@@ -176,6 +176,24 @@ check(
 
 sc.close();
 
+// --- Post-game analysis ------------------------------------------------------
+{
+  const first = await api(`/api/games/${gameId}/analysis`);
+  check('analysis endpoint returns a verdict per move', first.body?.analysis?.moves?.length === 7,
+    `${first.body?.analysis?.moves?.length} moves`);
+  check('analysis reports the search depth', first.body?.analysis?.depth > 0);
+  check('analysis summarises both players', Boolean(first.body?.analysis?.players?.['1'] && first.body?.analysis?.players?.['2']));
+
+  // The second request must come from the cache.
+  const second = await api(`/api/games/${gameId}/analysis`);
+  check('analysis is cached after the first request', second.body?.cached === true);
+
+  // A game still in progress must not be analysable: it would hand a player
+  // the engine's preferred move while they still have to find it.
+  const live = await api('/api/games/definitely-not-a-real-game/analysis');
+  check('analysis refuses an unknown game', live.status === 404, `status ${live.status}`);
+}
+
 // --- A shared spectator link works without an account -----------------------
 // The game screen offers this link as "anyone with this link can watch", so an
 // anonymous socket must be able to follow along — and must not be able to act.

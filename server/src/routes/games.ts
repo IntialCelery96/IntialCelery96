@@ -4,6 +4,7 @@ import { BOTS, GAME_MODES, MODE_IDS, isGameModeId, type GameModeId } from '@conn
 import { prisma } from '../lib/db.js';
 import { HttpError, currentUser, requireSetup } from '../middleware/auth.js';
 import { GAME_INCLUDE, findGame, listUserGames, summariseGame } from '../services/games.js';
+import { getGameAnalysis } from '../services/analysis.js';
 
 export async function gameRoutes(app: FastifyInstance): Promise<void> {
   /** The mode table and bot roster, so the client never hardcodes either. */
@@ -41,6 +42,32 @@ export async function gameRoutes(app: FastifyInstance): Promise<void> {
 
     return { games: await listUserGames({ userId: me.id, mode, limit: query.limit, cursor: query.cursor }) };
   });
+
+  /**
+   * Post-game analysis. Computed on first request (seconds, in a worker) and
+   * cached on the game row, so the second viewer gets it instantly.
+   *
+   * Rate limited separately from the global budget: this is the only endpoint
+   * that can cost real CPU, and it is cheap to ask for.
+   */
+  app.get(
+    '/api/games/:id/analysis',
+    { config: { rateLimit: { max: 20, timeWindow: '5 minutes' } } },
+    async (request) => {
+      const { id } = z.object({ id: z.string().min(1).max(64) }).parse(request.params);
+
+      const result = await getGameAnalysis(id);
+      if (!result) {
+        throw new HttpError(
+          404,
+          'That game has not finished, or does not exist',
+          'ANALYSIS_UNAVAILABLE',
+        );
+      }
+
+      return { analysis: result.analysis, cached: result.cached };
+    },
+  );
 
   /** Recently finished games across the site, for the home page. */
   app.get('/api/games/recent/all', async () => {

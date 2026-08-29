@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { COLS, GAME_MODES, type GameModeId, parseMoves, replay } from '@connect4gg/engine';
-import { api, type GameSummary } from '../lib/api';
+import { COLS, GAME_MODES, type GameModeId, dropRow, parseMoves, replay } from '@connect4gg/engine';
+import { ApiError, api, type GameAnalysis, type GameSummary, type MoveAnalysis } from '../lib/api';
 import { describeReason, formatDate, formatRatingDelta } from '../lib/format';
 import { Board } from '../components/Board';
 import { Avatar } from '../components/Avatar';
+import { AnalysisPanel, QUALITY_STYLE } from '../components/AnalysisPanel';
 
 /**
  * Replay and analysis.
@@ -19,6 +20,9 @@ export function ReplayPage() {
   const [error, setError] = useState<string | null>(null);
   const [ply, setPly] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [analysis, setAnalysis] = useState<GameAnalysis | null>(null);
+  const [analysing, setAnalysing] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!gameId) return;
@@ -46,6 +50,33 @@ export function ReplayPage() {
     return () => clearTimeout(timer);
   }, [playing, ply, columns.length]);
 
+  /**
+   * The verdict on the move that produced the position on screen. `ply` counts
+   * moves played, so ply 3 shows the board after move index 2.
+   */
+  const currentMove = useMemo(
+    () => analysis?.moves.find((move) => move.ply === ply - 1) ?? null,
+    [analysis, ply],
+  );
+
+  /** Verdicts keyed by ply, for annotating the move list. */
+  const byPly = useMemo(() => {
+    const map = new Map<number, MoveAnalysis>();
+    for (const move of analysis?.moves ?? []) map.set(move.ply, move);
+    return map;
+  }, [analysis]);
+
+  /**
+   * Where the engine's preferred move would have landed, in the position the
+   * player faced. Null when they played it, or when there is no analysis.
+   */
+  const suggestionIndex = useMemo(() => {
+    if (!currentMove || currentMove.column === currentMove.bestColumn) return undefined;
+    const before = replay(columns.slice(0, ply - 1));
+    const row = dropRow(before.board, currentMove.bestColumn);
+    return row === -1 ? undefined : row * COLS + currentMove.bestColumn;
+  }, [currentMove, columns, ply]);
+
   const lastMoveIndex = useMemo(() => {
     if (ply === 0) return undefined;
     const column = columns[ply - 1]!;
@@ -55,6 +86,22 @@ export function ReplayPage() {
     }
     return undefined;
   }, [columns, ply, position]);
+
+  async function runAnalysis(): Promise<void> {
+    if (!gameId || analysing) return;
+    setAnalysing(true);
+    setAnalysisError(null);
+    try {
+      const data = await api.get<{ analysis: GameAnalysis }>(`/api/games/${gameId}/analysis`);
+      setAnalysis(data.analysis);
+    } catch (caught) {
+      setAnalysisError(
+        caught instanceof ApiError ? caught.message : 'Could not analyse this game.',
+      );
+    } finally {
+      setAnalysing(false);
+    }
+  }
 
   if (error) return <p className="text-center text-slate-400">{error}</p>;
   if (!game) return <p className="text-center text-slate-400">Loading…</p>;
@@ -69,8 +116,15 @@ export function ReplayPage() {
           board={position.board}
           highlight={atEnd ? (position.winningLine ?? undefined) : undefined}
           lastMove={lastMoveIndex}
+          suggestion={suggestionIndex}
           label="Game replay"
         />
+
+        {suggestionIndex !== undefined && currentMove && (
+          <p className="mt-2 text-xs text-sky-300">
+            ★ marks where column {currentMove.bestColumn + 1} would have landed.
+          </p>
+        )}
 
         <div className="mt-4 w-full max-w-xl">
           <input
@@ -179,29 +233,76 @@ export function ReplayPage() {
         <div className="card">
           <h2 className="mb-2 text-sm font-semibold text-slate-300">Moves</h2>
           <ol className="grid grid-cols-6 gap-1 font-mono text-xs">
-            {columns.map((column, index) => (
-              <li key={index}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPlaying(false);
-                    setPly(index + 1);
-                  }}
-                  className={`w-full rounded px-1 py-0.5 ${
-                    ply === index + 1
-                      ? 'bg-sky-500 text-white'
-                      : index % 2 === 0
-                        ? 'bg-red-disc/20 text-red-300 hover:bg-red-disc/30'
-                        : 'bg-yellow-disc/20 text-yellow-200 hover:bg-yellow-disc/30'
-                  }`}
-                >
-                  {column + 1}
-                </button>
-              </li>
-            ))}
+            {columns.map((column, index) => {
+              const verdict = byPly.get(index);
+              const notable = verdict ? QUALITY_STYLE[verdict.quality].notable : false;
+              return (
+                <li key={index} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPlaying(false);
+                      setPly(index + 1);
+                    }}
+                    title={verdict ? `${QUALITY_STYLE[verdict.quality].label}` : undefined}
+                    className={`w-full rounded px-1 py-0.5 ${
+                      ply === index + 1
+                        ? 'bg-sky-500 text-white'
+                        : index % 2 === 0
+                          ? 'bg-red-disc/20 text-red-300 hover:bg-red-disc/30'
+                          : 'bg-yellow-disc/20 text-yellow-200 hover:bg-yellow-disc/30'
+                    }`}
+                  >
+                    {column + 1}
+                  </button>
+                  {/* A dot rather than a recolour: the red/yellow already
+                      encodes whose move it was, and that must stay readable. */}
+                  {notable && verdict && (
+                    <span
+                      className={`pointer-events-none absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full ${
+                        QUALITY_STYLE[verdict.quality].dot
+                      }`}
+                    />
+                  )}
+                </li>
+              );
+            })}
           </ol>
           {columns.length === 0 && <p className="text-xs text-slate-500">No moves were played.</p>}
         </div>
+
+        {analysis ? (
+          <AnalysisPanel
+            analysis={analysis}
+            current={currentMove}
+            player1Name={game.player1.user?.username ?? game.player1.botName ?? 'Red'}
+            player2Name={game.player2.user?.username ?? game.player2.botName ?? 'Yellow'}
+            onSelectPly={(target) => {
+              setPlaying(false);
+              setPly(target);
+            }}
+          />
+        ) : (
+          <div className="card">
+            <h2 className="mb-1 text-sm font-semibold text-slate-300">Analysis</h2>
+            <p className="mb-3 text-xs text-slate-500">
+              Have the engine check every move for missed wins and blunders.
+            </p>
+            <button
+              type="button"
+              onClick={() => void runAnalysis()}
+              className="btn-primary w-full"
+              disabled={analysing || columns.length === 0}
+            >
+              {analysing ? 'Analysing…' : 'Analyze this game'}
+            </button>
+            {analysisError && (
+              <p className="mt-2 text-xs text-rose-400" role="alert">
+                {analysisError}
+              </p>
+            )}
+          </div>
+        )}
 
         <Link to="/play" className="btn-secondary w-full">
           Play a game

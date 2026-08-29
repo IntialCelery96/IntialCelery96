@@ -26,6 +26,12 @@ export interface BoardProps {
   highlight?: readonly number[] | undefined;
   /** Board index of the most recent move, given a subtle ring. */
   lastMove?: number | undefined;
+  /**
+   * A square the engine would rather have played, marked distinctly from the
+   * winning-line highlight. Analysis is far more useful when the better move is
+   * shown on the board than when it is only named in a sentence.
+   */
+  suggestion?: number | undefined;
   /** Renders from player 2's side, so your own discs are always at the bottom. */
   flipped?: boolean;
   /** Dims the board and blocks input, e.g. while waiting for an opponent. */
@@ -46,6 +52,7 @@ export function Board({
   previewPlayer,
   highlight,
   lastMove,
+  suggestion,
   flipped = false,
   disabled = false,
   compact = false,
@@ -100,6 +107,7 @@ export function Board({
               const index = row * COLS + column;
               const value = board[index] ?? 0;
               const isHighlighted = highlighted.has(index);
+              const isSuggested = index === suggestion;
               const isPreview = index === previewIndex && value === 0;
               const columnPlayable = canPlay(column);
 
@@ -124,7 +132,9 @@ export function Board({
                     columnPlayable && hoveredColumn === column
                       ? 'bg-blue-900/70'
                       : 'bg-slate-950/80'
-                  } ${isHighlighted ? 'ring-2 ring-emerald-300' : ''}`}
+                  } ${isHighlighted ? 'ring-2 ring-emerald-300' : ''} ${
+                    isSuggested && !isHighlighted ? 'ring-2 ring-sky-400' : ''
+                  }`}
                 >
                   {value !== 0 && (
                     <span
@@ -137,6 +147,15 @@ export function Board({
                         isHighlighted ? 'animate-pulseWin' : 'animate-drop'
                       }`}
                     />
+                  )}
+
+                  {isSuggested && value === 0 && (
+                    <span
+                      className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs font-bold text-sky-300"
+                      aria-hidden="true"
+                    >
+                      ★
+                    </span>
                   )}
 
                   {isPreview && previewPlayer && (

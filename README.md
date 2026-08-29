@@ -22,7 +22,7 @@ strategy curriculum.
 | Replay scrubber and spectator links | ✅ |
 | Leaderboards, profiles, rating graphs, user search, follows | ✅ |
 | Strategy curriculum | 🚧 scaffold — one lesson, one puzzle, [roadmap](docs/curriculum-roadmap.md) |
-| Post-game analysis | 🚧 stub — *Analyze* opens the replay |
+| Post-game analysis — missed wins, blunders, accuracy | ✅ |
 
 ## Stack
 
@@ -138,6 +138,15 @@ shareable, so a socket without a session still connects — with a null identity
 It can join a room and receive broadcasts; every state-changing handler resolves
 an account first. See [docs/security.md](docs/security.md) for the full review of
 the auth, upload, and realtime surfaces.
+
+**Analysis is anchored to tactical facts, not a grading curve.** The engine's
+evaluation units are arbitrary weights, so a "40-point drop" would mean nothing
+to a player. Instead the verdicts that matter are checkable claims — *a win was
+on the board and you did not play it*, *that move let your opponent win and
+another move didn't* — which is also why they hold at any search depth. Measured
+across a full game, depths 4 through 8 produce a materially identical
+classification, so the default is 6: about a second per game rather than
+thirteen. Results are cached on the game row.
 
 **Ratings are per mode.** Blitz strength and Classical strength are genuinely
 different skills, so they are tracked separately, exactly as a chess site does.

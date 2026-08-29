@@ -80,10 +80,9 @@ Beyond the content itself, the section is meant to grow these:
 - **Puzzle streaks and a puzzle rating** — the same ELO machinery already used
   for games, applied to puzzle solving.
 - **A daily puzzle** — one shared position per day, with a leaderboard.
-- **"Analyze this game"** — the post-game *Analyze* link currently opens the
-  replay. It should eventually annotate each move: where the losing blunder was,
-  what the winning move would have been. The engine already has the search
-  needed for this (`packages/engine/src/bots/search.ts`); what is missing is a
-  pass that evaluates every position in a finished game and surfaces the swings.
+- **Lesson generation from your own games.** Analysis now annotates every move
+  of a finished game (`packages/engine/src/analysis.ts`), so the raw material
+  exists to say "you missed three vertical wins this week — here is the lesson
+  on spotting them" and route a player to the relevant material.
 - **Lesson-to-puzzle links** — finishing a lesson should offer the puzzles that
   drill it.

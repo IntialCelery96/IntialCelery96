@@ -152,6 +152,55 @@ export function search(state: GameState, options: SearchOptions): SearchResult {
   return { move, score: bestScore, nodes: ctx.nodes };
 }
 
+export interface RankedMove {
+  move: number;
+  score: number;
+}
+
+/**
+ * Scores every legal move from `state`, best first.
+ *
+ * `search` throws away everything but the winner; analysis needs the whole
+ * ranking, so it can say not just "the best move was X" but how much worse the
+ * move actually played was. Same cost as one search — the root moves are
+ * scored anyway.
+ *
+ * Scores are from the point of view of the side to move: higher is better for
+ * them. A score at or near `WIN_SCORE` is a forced win; its negation is a
+ * forced loss.
+ */
+export function rankMoves(state: GameState, options: SearchOptions): RankedMove[] {
+  const { depth, style, timeBudgetMs = 5_000 } = options;
+  const ctx: SearchContext = {
+    style,
+    rootPlayer: state.turn,
+    nodes: 0,
+    deadline: Date.now() + timeBudgetMs,
+    aborted: false,
+  };
+
+  const ranked: RankedMove[] = [];
+
+  for (const col of orderedMoves(state)) {
+    const next = applyMove(state, col);
+
+    let score: number;
+    if (next.status === 'win') {
+      score = WIN_SCORE;
+    } else if (next.status === 'draw') {
+      score = 0;
+    } else {
+      // Full window per move: alpha-beta would prune to a bound rather than an
+      // exact score, and analysis needs to compare moves against each other.
+      score = -negamax(next, depth - 1, -Infinity, Infinity, 1, ctx);
+    }
+
+    ranked.push({ move: col, score });
+  }
+
+  return ranked.sort((a, b) => b.score - a.score);
+}
+
 /** Columns that win immediately for the side to move. */
 export function immediateWins(state: GameState): number[] {
   return legalMoves(state).filter((col) => applyMove(state, col).status === 'win');

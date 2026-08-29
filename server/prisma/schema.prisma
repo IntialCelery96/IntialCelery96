@@ -161,6 +161,13 @@ model Game {
   startedAt DateTime  @default(now())
   endedAt   DateTime?
 
+  // Cached post-game analysis (a GameAnalysis from the engine). Computed on
+  // first request and stored, because analysing a full game means one search
+  // per move — seconds of CPU that nobody should pay for twice.
+  analysis        Json?
+  // Search depth the cached analysis used, so raising the depth invalidates it.
+  analysisDepth   Int?
+
   @@index([player1Id, startedAt])
   @@index([player2Id, startedAt])
   @@index([mode, startedAt])

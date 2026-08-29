@@ -7,7 +7,7 @@ import {
 import { prisma } from '../lib/db.js';
 import { createGameRow } from '../services/games.js';
 import { getOrCreateRating, recordRatedResult, shouldRate } from '../services/ratings.js';
-import { computeBotMove } from './botWorker.js';
+import { computeBotMove } from './engineWorker.js';
 import { LiveGame, type EndReason, type GameOutcome, type LiveSeat } from './liveGame.js';
 
 /**

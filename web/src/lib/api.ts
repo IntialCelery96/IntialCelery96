@@ -156,3 +156,39 @@ export interface ModeInfo {
   rated: boolean;
   label: string;
 }
+
+// --- Post-game analysis -----------------------------------------------------
+
+export type MoveQuality =
+  | 'best'
+  | 'good'
+  | 'inaccuracy'
+  | 'mistake'
+  | 'blunder'
+  | 'missed_win';
+
+export interface MoveAnalysis {
+  ply: number;
+  player: 1 | 2;
+  column: number;
+  quality: MoveQuality;
+  bestColumn: number;
+  scoreDrop: number;
+  note: string | null;
+}
+
+export interface PlayerSummary {
+  best: number;
+  good: number;
+  inaccuracy: number;
+  mistake: number;
+  blunder: number;
+  missedWin: number;
+  accuracy: number;
+}
+
+export interface GameAnalysis {
+  moves: MoveAnalysis[];
+  players: Record<1 | 2, PlayerSummary>;
+  depth: number;
+}

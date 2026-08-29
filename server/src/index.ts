@@ -2,7 +2,7 @@ import { buildApp } from './app.js';
 import { disconnect, prisma } from './lib/db.js';
 import { env } from './lib/env.js';
 import { pruneExpiredSessions } from './lib/session.js';
-import { shutdownBotWorker } from './realtime/botWorker.js';
+import { shutdownEngineWorker } from './realtime/engineWorker.js';
 import { createGateway } from './realtime/gateway.js';
 
 const SESSION_PRUNE_INTERVAL_MS = 60 * 60 * 1000;
@@ -44,7 +44,7 @@ async function main(): Promise<void> {
 
     // Order matters: stop taking work, finish live games, then close the pool.
     await gateway.shutdown().catch((error) => app.log.error({ err: error }, 'Gateway shutdown'));
-    await shutdownBotWorker().catch(() => undefined);
+    await shutdownEngineWorker().catch(() => undefined);
     await app.close().catch((error) => app.log.error({ err: error }, 'HTTP shutdown'));
     await disconnect().catch(() => undefined);
 
