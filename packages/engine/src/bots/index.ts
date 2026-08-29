@@ -16,15 +16,36 @@ export * from './search.js';
  */
 export type BotBrain = 'random' | 'greedy' | 'search';
 
+/** How hard a bot is to beat, ordered easiest to hardest. */
+export type BotDifficulty =
+  | 'Beginner'
+  | 'Easy'
+  | 'Moderate'
+  | 'Challenging'
+  | 'Hard'
+  | 'Expert';
+
+export const BOT_DIFFICULTIES: readonly BotDifficulty[] = [
+  'Beginner',
+  'Easy',
+  'Moderate',
+  'Challenging',
+  'Hard',
+  'Expert',
+];
+
 export interface BotDefinition {
   id: string;
   name: string;
   /** Approximate human rating this bot plays at. Shown in the UI. */
   rating: number;
-  /** Two or three sentences of flavour plus an honest hint about its weakness. */
-  description: string;
-  /** Short tag for the card, e.g. "Aggressive". */
-  personality: string;
+  /**
+   * The bot's difficulty, and the only description of it shown to a player.
+   * The playing style still differs between bots — that lives in `style` — but
+   * it is left for the player to discover over the board rather than spelled
+   * out on the card.
+   */
+  difficulty: BotDifficulty;
   avatar: string;
   brain: BotBrain;
   /** Search depth in plies. Ignored for the non-searching brains. */
@@ -36,104 +57,100 @@ export interface BotDefinition {
    */
   blunderRate: number;
   style: BotStyle;
-  /** Milliseconds of "thinking" before the move lands, so play feels human. */
+  /**
+   * How long to pause before the move lands, in milliseconds.
+   *
+   * Nothing under about three quarters of a second: a reply that arrives the
+   * instant you let go of your disc reads as a script rather than an opponent,
+   * and the weakest bots compute their move in well under a millisecond. The
+   * pause is on top of any search time, so the strongest bots feel slowest.
+   */
   thinkMs: [min: number, max: number];
 }
 
 const style = (overrides: Partial<BotStyle>): BotStyle => ({ ...BALANCED_STYLE, ...overrides });
 
 /**
- * The roster. Ordered easiest to hardest — the UI renders them in this order.
+ * The roster. Ordered easiest to hardest — the UI renders them in this order,
+ * and `difficulty` runs in step with `BOT_DIFFICULTIES`.
  *
- * Skill comes from `depth` and `blunderRate`; strategy comes from `style`.
- * That separation means "a strong defensive bot" and "a weak defensive bot"
- * are the same personality at different strengths, which is what makes the
- * ladder feel like climbing rather than facing six unrelated engines.
+ * Skill comes from `depth` and `blunderRate`; style comes from `style`. That
+ * separation means "a strong defensive bot" and "a weak defensive bot" are the
+ * same character at different strengths, which is what makes the ladder feel
+ * like climbing rather than facing six unrelated engines.
  */
 export const BOTS: readonly BotDefinition[] = [
   {
     id: 'pip',
     name: 'Pip',
     rating: 600,
-    personality: 'Chaotic',
+    difficulty: 'Beginner',
     avatar: '🐣',
-    description:
-      'Drops discs more or less wherever they fit. Pip is here to help you learn which squares matter, not to put up a fight.',
     brain: 'random',
     depth: 0,
     blunderRate: 0,
     style: BALANCED_STYLE,
-    thinkMs: [250, 600],
+    thinkMs: [700, 1_300],
   },
   {
     id: 'rusty',
     name: 'Rusty',
     rating: 850,
-    personality: 'Distracted',
+    difficulty: 'Easy',
     avatar: '🤖',
-    description:
-      'Takes a win when it sees one and blocks yours when he notices. He notices maybe four times out of five.',
     brain: 'greedy',
     depth: 0,
     blunderRate: 0.2,
     style: BALANCED_STYLE,
-    thinkMs: [400, 900],
+    thinkMs: [800, 1_500],
   },
   {
     id: 'nora',
     name: 'Nora',
     rating: 1100,
-    personality: 'Solid',
+    difficulty: 'Moderate',
     avatar: '🦉',
-    description:
-      'Looks two moves ahead and likes the middle of the board. Reliable, but she cannot see a double threat coming.',
     brain: 'search',
     depth: 3,
     blunderRate: 0.08,
     style: style({ center: 8 }),
-    thinkMs: [500, 1_100],
+    thinkMs: [900, 1_700],
   },
   {
     id: 'vex',
     name: 'Vex',
     rating: 1450,
-    personality: 'Aggressive',
+    difficulty: 'Challenging',
     avatar: '🔥',
-    description:
-      'Builds threats relentlessly and would rather race you than stop you. Punish him by making him defend — he is bad at it.',
     brain: 'search',
     depth: 5,
     blunderRate: 0.04,
     style: style({ three: 60, liveThreat: 130, defense: 0.7, center: 7 }),
-    thinkMs: [600, 1_400],
+    thinkMs: [1_000, 1_900],
   },
   {
     id: 'bastion',
     name: 'Bastion',
     rating: 1650,
-    personality: 'Defensive',
+    difficulty: 'Hard',
     avatar: '🛡️',
-    description:
-      'Smothers your threats before they form and waits for you to overreach. Slow games. Bring patience and a plan.',
     brain: 'search',
     depth: 7,
     blunderRate: 0.02,
     style: style({ defense: 1.25, three: 35, parity: 20 }),
-    thinkMs: [700, 1_600],
+    thinkMs: [1_100, 2_100],
   },
   {
     id: 'zenith',
     name: 'Zenith',
     rating: 2000,
-    personality: 'Positional',
+    difficulty: 'Expert',
     avatar: '👑',
-    description:
-      'Plays the parity game — odd and even threats, forced sequences, the works. Zenith does not blunder. Take the centre on move one or do not bother.',
     brain: 'search',
     depth: 9,
     blunderRate: 0,
     style: style({ parity: 45, three: 50, liveThreat: 110, center: 9 }),
-    thinkMs: [800, 2_000],
+    thinkMs: [1_200, 2_400],
   },
 ];
 

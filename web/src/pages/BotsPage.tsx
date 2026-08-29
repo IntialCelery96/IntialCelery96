@@ -5,11 +5,25 @@ import { api, type BotInfo } from '../lib/api';
 import { getSocket } from '../lib/socket';
 
 /**
+ * Difficulty colours, running cool to hot up the ladder. Keyed by the label the
+ * engine returns rather than by bot id, so a new bot inherits its band for free.
+ */
+const DIFFICULTY_STYLE: Record<string, string> = {
+  Beginner: 'bg-emerald-500/15 text-emerald-300',
+  Easy: 'bg-teal-500/15 text-teal-300',
+  Moderate: 'bg-sky-500/15 text-sky-300',
+  Challenging: 'bg-amber-500/15 text-amber-300',
+  Hard: 'bg-orange-500/15 text-orange-300',
+  Expert: 'bg-rose-500/15 text-rose-300',
+};
+
+/**
  * The bot ladder.
  *
- * Each bot has a distinct playing style as well as a distinct strength, and the
- * card says what that style is and how to beat it — the roster is meant to be a
- * training tool, not just six difficulty levels.
+ * Each card carries a difficulty and a rating and nothing else. The bots do
+ * play differently from one another, but naming the style on the card tells a
+ * player what to expect before they have played a move; finding it out over the
+ * board is the more useful lesson.
  */
 export function BotsPage() {
   const [bots, setBots] = useState<BotInfo[]>([]);
@@ -52,8 +66,7 @@ export function BotsPage() {
     <div>
       <h1 className="mb-1 text-2xl font-bold">Play a bot</h1>
       <p className="mb-5 text-sm text-slate-400">
-        Six opponents with different strengths and different habits. Bot games are never rated, so
-        you can experiment freely.
+        Six opponents, easiest first. Bot games are never rated, so you can experiment freely.
       </p>
 
       <div className="card mb-6 flex flex-wrap items-end gap-4">
@@ -105,20 +118,20 @@ export function BotsPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {bots.map((bot) => (
           <article key={bot.id} className="card flex flex-col">
-            <div className="mb-3 flex items-center gap-3">
+            <div className="mb-4 flex items-center gap-3">
               <span className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-2xl">
                 {bot.avatar}
               </span>
               <div>
                 <h2 className="font-semibold">{bot.name}</h2>
                 <div className="flex items-center gap-2 text-xs">
+                  <span className={`chip ${DIFFICULTY_STYLE[bot.difficulty] ?? 'bg-slate-800 text-slate-300'}`}>
+                    {bot.difficulty}
+                  </span>
                   <span className="text-slate-400">~{bot.rating}</span>
-                  <span className="chip bg-slate-800 text-slate-300">{bot.personality}</span>
                 </div>
               </div>
             </div>
-
-            <p className="mb-4 flex-1 text-sm text-slate-400">{bot.description}</p>
 
             <button
               type="button"

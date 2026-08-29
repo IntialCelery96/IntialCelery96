@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   BOTS,
+  BOT_DIFFICULTIES,
   applyMove,
   chooseMove,
   createGame,
@@ -49,6 +50,36 @@ describe('roster', () => {
       const delay = thinkDelayMs(bot, random);
       expect(delay).toBeGreaterThanOrEqual(bot.thinkMs[0]);
       expect(delay).toBeLessThanOrEqual(bot.thinkMs[1]);
+    }
+  });
+
+  it('never replies instantly', () => {
+    // The weakest bots pick a move in well under a millisecond. Without a
+    // deliberate pause they answer the moment you let go of your disc, which
+    // reads as a script rather than an opponent.
+    const random = seeded(11);
+    for (const bot of BOTS) {
+      expect(bot.thinkMs[0]).toBeGreaterThanOrEqual(700);
+      expect(thinkDelayMs(bot, random)).toBeGreaterThanOrEqual(700);
+    }
+  });
+
+  it('takes longer the harder the bot', () => {
+    for (let i = 1; i < BOTS.length; i++) {
+      expect(BOTS[i]!.thinkMs[0]).toBeGreaterThanOrEqual(BOTS[i - 1]!.thinkMs[0]);
+      expect(BOTS[i]!.thinkMs[1]).toBeGreaterThanOrEqual(BOTS[i - 1]!.thinkMs[1]);
+    }
+  });
+
+  it('describes every bot by difficulty alone, in ladder order', () => {
+    const labels = BOTS.map((bot) => bot.difficulty);
+    // Each bot's difficulty sits at its own rung of the ladder.
+    expect(labels).toEqual(BOT_DIFFICULTIES);
+    // And difficulty is the only description: no prose to fall out of step
+    // with how the bot actually plays.
+    for (const bot of BOTS) {
+      expect(bot).not.toHaveProperty('description');
+      expect(bot).not.toHaveProperty('personality');
     }
   });
 });

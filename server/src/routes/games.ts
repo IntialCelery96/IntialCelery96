@@ -14,8 +14,7 @@ export async function gameRoutes(app: FastifyInstance): Promise<void> {
       id: bot.id,
       name: bot.name,
       rating: bot.rating,
-      personality: bot.personality,
-      description: bot.description,
+      difficulty: bot.difficulty,
       avatar: bot.avatar,
     })),
   }));

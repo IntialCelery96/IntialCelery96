@@ -142,8 +142,7 @@ export interface BotInfo {
   id: string;
   name: string;
   rating: number;
-  personality: string;
-  description: string;
+  difficulty: string;
   avatar: string;
 }
 
