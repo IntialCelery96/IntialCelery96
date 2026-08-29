@@ -111,8 +111,18 @@ export type GameSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 let socket: GameSocket | null = null;
 
+/** See the note on DEMO in api.ts. */
+const DEMO = import.meta.env.VITE_DEMO === '1';
+
 export function getSocket(): GameSocket {
   if (socket) return socket;
+
+  if (DEMO) {
+    // Synchronous because callers use the socket immediately; the module is
+    // tiny and only reachable in the demo build.
+    socket = createDemoSocket();
+    return socket;
+  }
 
   socket = io(import.meta.env.VITE_API_URL ?? '', {
     withCredentials: true,
@@ -131,4 +141,16 @@ export function getSocket(): GameSocket {
 export function closeSocket(): void {
   socket?.close();
   socket = null;
+}
+
+/**
+ * Bound at startup by the demo entry point. Kept as an injected factory so the
+ * mock never ends up in the production bundle.
+ */
+let createDemoSocket: () => GameSocket = () => {
+  throw new Error('Demo socket was not installed');
+};
+
+export function installDemoSocket(factory: () => GameSocket): void {
+  createDemoSocket = factory;
 }

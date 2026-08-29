@@ -8,6 +8,13 @@
 
 const BASE = import.meta.env.VITE_API_URL ?? '';
 
+/**
+ * The standalone demo build has no server behind it. When this is set, requests
+ * are resolved against fixtures instead of the network — substituted here, at
+ * the boundary, so no page or component contains a demo branch.
+ */
+export const DEMO = import.meta.env.VITE_DEMO === '1';
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -20,6 +27,11 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  if (DEMO) {
+    const { handleDemoRequest } = await import('../demo/mockApi');
+    return (await handleDemoRequest(path, init)) as T;
+  }
+
   const response = await fetch(`${BASE}${path}`, {
     credentials: 'include',
     ...init,

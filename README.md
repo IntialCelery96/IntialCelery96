@@ -86,6 +86,31 @@ URI `http://localhost:4000/api/auth/google/callback`, then set
 `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. Leave them blank and the
 "Continue with Google" button simply doesn't render.
 
+## Seeing the whole site
+
+Two ways, neither needing an account:
+
+```bash
+npm run build:demo      # one self-contained HTML file, open it in a browser
+```
+
+That builds the real app with the API and socket resolved against fixtures
+instead of a server, bundled into a single file. Every page renders, every link
+works, and games against the bots — including the post-game analysis — run for
+real, because the engine is the same one the server uses. Only the things that
+genuinely need a backend (live opponents, accounts, persistence) are stubbed.
+
+To see it with a database behind it instead:
+
+```bash
+npm run db:demo -w @connect4gg/server
+```
+
+That seeds a cast of players, a few hundred finished games played out by the
+bots, and the rating histories those games imply — enough that the home page,
+leaderboards and profiles have something in them. Sign in as
+`demo@demo.connect4.gg` / `connect4demo`.
+
 ## Tests
 
 ```bash

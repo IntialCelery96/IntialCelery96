@@ -11,3 +11,4 @@ coverage/
 uploads/
 server/uploads/
 *.tsbuildinfo
+web/dist-demo/

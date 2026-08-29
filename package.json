@@ -2,7 +2,7 @@
   "name": "connect4gg",
   "private": true,
   "version": "0.1.0",
-  "description": "Connect4.gg — a competitive, ranked, real-time Connect 4 platform.",
+  "description": "Connect4.gg \u2014 a competitive, ranked, real-time Connect 4 platform.",
   "workspaces": [
     "packages/*",
     "server",
@@ -17,6 +17,7 @@
     "test": "npm run test -w @connect4gg/engine && npm run test -w @connect4gg/server",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "db:migrate": "npm run db:migrate -w @connect4gg/server",
-    "db:seed": "npm run db:seed -w @connect4gg/server"
+    "db:seed": "npm run db:seed -w @connect4gg/server",
+    "build:demo": "node scripts/build-demo.mjs"
   }
 }

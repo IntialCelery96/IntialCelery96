@@ -1,6 +1,13 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+/**
+ * The demo build is published as one self-contained HTML file, so it must not
+ * be code-split: a dynamic import would resolve to an asset URL that has no
+ * origin to be fetched from. Everything goes in one chunk instead.
+ */
+const demo = process.env.VITE_DEMO === '1';
+
 export default defineConfig({
   plugins: [react()],
   server: {
@@ -16,6 +23,9 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    sourcemap: !demo,
+    ...(demo
+      ? { rollupOptions: { output: { inlineDynamicImports: true } } }
+      : {}),
   },
 });
