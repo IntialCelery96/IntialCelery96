@@ -1,6 +1,13 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { MODE_IDS, type GameModeId, isGameModeId } from '@connect4gg/engine';
+import {
+  AVATAR_PRESETS,
+  MODE_IDS,
+  isValidPresetId,
+  presetUrl,
+  type GameModeId,
+  isGameModeId,
+} from '@connect4gg/engine';
 import { prisma } from '../lib/db.js';
 import {
   MAX_AVATAR_BYTES,
@@ -21,6 +28,8 @@ import {
   usernameCooldownRemaining,
 } from '../services/users.js';
 import { summariseGame } from '../services/games.js';
+import { screenText } from '../services/moderation.js';
+import { checkImage, uploadPolicy, uploadsEnabled } from '../lib/imageModeration.js';
 
 const usernameSchema = z
   .string()
@@ -36,6 +45,16 @@ const countrySchema = z
   .transform((c) => c.toUpperCase());
 
 export async function profileRoutes(app: FastifyInstance): Promise<void> {
+  /**
+   * The avatar catalogue and whether uploads are open, so the picker can show
+   * the right options rather than offering an upload that will be refused.
+   */
+  app.get('/api/avatars', async () => ({
+    presets: AVATAR_PRESETS,
+    uploadsEnabled: uploadsEnabled(),
+    policy: uploadPolicy(),
+  }));
+
   /** Live availability check for the setup and settings screens. */
   app.get('/api/username-available', { preHandler: requireAuth }, async (request) => {
     const { username } = z.object({ username: usernameSchema }).parse(request.query);
@@ -60,11 +79,22 @@ export async function profileRoutes(app: FastifyInstance): Promise<void> {
         username: usernameSchema,
         bio: z.string().trim().max(300).optional(),
         country: countrySchema.optional(),
+        /** One of the built-in avatars. Uploads go through their own route. */
+        avatarPreset: z.string().max(40).optional(),
       })
       .parse(request.body);
 
+    if (body.avatarPreset !== undefined && !isValidPresetId(body.avatarPreset)) {
+      throw new HttpError(400, 'Unknown avatar', 'BAD_AVATAR');
+    }
+
     const check = await checkUsernameAvailable(body.username, me.id);
     if (!check.ok) throw new HttpError(409, check.reason!, 'USERNAME_UNAVAILABLE');
+
+    if (body.bio) {
+      const screened = screenText(body.bio);
+      if (!screened.ok) throw new HttpError(422, screened.message!, 'CONTENT_REJECTED');
+    }
 
     try {
       const user = await prisma.user.update({
@@ -74,6 +104,7 @@ export async function profileRoutes(app: FastifyInstance): Promise<void> {
           usernameLower: body.username.toLowerCase(),
           bio: body.bio ?? null,
           country: body.country ?? null,
+          ...(body.avatarPreset ? { avatarUrl: presetUrl(body.avatarPreset) } : {}),
           setupComplete: true,
           // The first username doesn't start the cooldown — a new player who
           // typos their name shouldn't be stuck with it for a month.
@@ -99,8 +130,13 @@ export async function profileRoutes(app: FastifyInstance): Promise<void> {
         username: usernameSchema.optional(),
         bio: z.string().trim().max(300).nullable().optional(),
         country: countrySchema.nullable().optional(),
+        avatarPreset: z.string().max(40).optional(),
       })
       .parse(request.body);
+
+    if (body.avatarPreset !== undefined && !isValidPresetId(body.avatarPreset)) {
+      throw new HttpError(400, 'Unknown avatar', 'BAD_AVATAR');
+    }
 
     const user = await prisma.user.findUniqueOrThrow({ where: { id: me.id } });
     const data: Record<string, unknown> = {};
@@ -122,8 +158,15 @@ export async function profileRoutes(app: FastifyInstance): Promise<void> {
       data.usernameChangedAt = new Date();
     }
 
-    if (body.bio !== undefined) data.bio = body.bio;
+    if (body.bio !== undefined) {
+      if (body.bio) {
+        const screened = screenText(body.bio);
+        if (!screened.ok) throw new HttpError(422, screened.message!, 'CONTENT_REJECTED');
+      }
+      data.bio = body.bio;
+    }
     if (body.country !== undefined) data.country = body.country;
+    if (body.avatarPreset !== undefined) data.avatarUrl = presetUrl(body.avatarPreset);
 
     try {
       const updated = await prisma.user.update({
@@ -152,6 +195,15 @@ export async function profileRoutes(app: FastifyInstance): Promise<void> {
     },
     async (request) => {
       const me = currentUser(request);
+
+      if (!uploadsEnabled()) {
+        throw new HttpError(
+          403,
+          'Photo uploads are turned off. Please pick one of the avatars instead.',
+          'UPLOADS_DISABLED',
+        );
+      }
+
       const file = await request.file({ limits: { fileSize: MAX_AVATAR_BYTES, files: 1 } });
 
       if (!file) throw new HttpError(400, 'No image was uploaded', 'NO_FILE');
@@ -166,7 +218,15 @@ export async function profileRoutes(app: FastifyInstance): Promise<void> {
         throw new HttpError(413, 'That image is larger than 5MB', 'FILE_TOO_LARGE');
       }
 
+      // Re-encode first, then screen: the classifier should see the bytes that
+      // would actually be served, not whatever container they arrived in.
       const processed = await processAvatar(raw);
+
+      const verdict = await checkImage(processed, 'image/webp');
+      if (!verdict.allowed) {
+        throw new HttpError(422, verdict.message ?? 'That photo was not approved', 'IMAGE_REJECTED');
+      }
+
       const stored = await storeAvatar(me.id, processed);
 
       const previous = await prisma.user.findUnique({

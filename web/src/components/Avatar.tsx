@@ -1,3 +1,4 @@
+import { AVATAR_PRESETS_BY_ID, avatarDataUri, presetIdFromUrl } from '@connect4gg/engine';
 import { initials } from '../lib/format';
 
 interface AvatarProps {
@@ -24,6 +25,23 @@ const SIZES = {
  */
 export function Avatar({ username, avatarUrl, color, size = 'md', isBot }: AvatarProps) {
   const name = username ?? '?';
+
+  // `avatar:<id>` refers to one of the built-in avatars, drawn inline rather
+  // than fetched. Anything else is an uploaded file.
+  const presetId = avatarUrl ? presetIdFromUrl(avatarUrl) : null;
+  const preset = presetId ? AVATAR_PRESETS_BY_ID[presetId] : undefined;
+
+  if (preset) {
+    return (
+      <img
+        src={avatarDataUri(preset)}
+        alt=""
+        className={`${SIZES[size]} shrink-0 rounded-full ${
+          isBot ? 'ring-2 ring-accent/60' : 'ring-1 ring-line-2'
+        }`}
+      />
+    );
+  }
 
   if (avatarUrl) {
     return (

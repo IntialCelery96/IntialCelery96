@@ -19,6 +19,16 @@ const schema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
 
+  /**
+   * How profile photos are handled. Defaults to presets-only, so a deployment
+   * is family-friendly without anyone having to configure it. See
+   * lib/imageModeration.ts.
+   */
+  AVATAR_UPLOADS: z.enum(['presets', 'moderated', 'open']).default('presets'),
+  /** Classifier endpoint, required when AVATAR_UPLOADS=moderated. */
+  IMAGE_MODERATION_URL: z.string().url().optional(),
+  IMAGE_MODERATION_KEY: z.string().optional(),
+
   STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
   UPLOAD_DIR: z.string().default('./uploads'),
   S3_ENDPOINT: z.string().optional(),
@@ -49,6 +59,12 @@ function load() {
 
   if (value.NODE_ENV === 'production' && value.SESSION_SECRET.startsWith('dev-secret')) {
     throw new Error('Refusing to start in production with the development SESSION_SECRET');
+  }
+
+  // Refusing here rather than at upload time: a misconfiguration that silently
+  // disables photo moderation is exactly the failure worth catching at boot.
+  if (value.AVATAR_UPLOADS === 'moderated' && !value.IMAGE_MODERATION_URL) {
+    throw new Error('AVATAR_UPLOADS=moderated requires IMAGE_MODERATION_URL');
   }
 
   return value;

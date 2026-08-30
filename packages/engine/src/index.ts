@@ -5,3 +5,4 @@ export * from './modes.js';
 export * from './bots/index.js';
 export * from './curriculum.js';
 export * from './analysis.js';
+export * from './avatars.js';

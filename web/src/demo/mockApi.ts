@@ -154,6 +154,15 @@ const routes: Route[] = [
 
   {
     method: 'GET',
+    pattern: /^\/api\/avatars$/,
+    handler: () => {
+      const { AVATAR_PRESETS } = engine();
+      // The demo mirrors the safe default: presets only, no uploads.
+      return { presets: AVATAR_PRESETS, uploadsEnabled: false, policy: 'presets' };
+    },
+  },
+  {
+    method: 'GET',
     pattern: /^\/api\/username-available/,
     handler: () => ({ available: true, reason: null }),
   },

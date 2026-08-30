@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { ApiError, api, type ProfileResponse, type PublicUser } from '../lib/api';
+import { ApiError, api, type ProfileResponse } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
-import { AvatarUpload } from '../components/AvatarUpload';
+import { AvatarPicker } from '../components/AvatarPicker';
 import { ThemePicker } from '../components/ThemePicker';
 
 export function SettingsPage() {
@@ -13,6 +13,8 @@ export function SettingsPage() {
   const [country, setCountry] = useState('');
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  // Held until Save, so choosing an avatar and changing a username are one edit.
+  const [pendingPreset, setPendingPreset] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user?.username) return;
@@ -41,7 +43,9 @@ export function SettingsPage() {
         ...(username !== profile?.user.username ? { username: username.trim() } : {}),
         bio: bio.trim() || null,
         country: country.trim() || null,
+        ...(pendingPreset ? { avatarPreset: pendingPreset } : {}),
       });
+      setPendingPreset(null);
       await refresh();
       setMessage({ kind: 'ok', text: 'Profile saved.' });
     } catch (caught) {
@@ -68,13 +72,13 @@ export function SettingsPage() {
 
       <form onSubmit={save} className="card space-y-5">
         <div>
-          <span className="label">Profile photo</span>
-          <AvatarUpload
-            username={user.username}
-            avatarUrl={user.avatarUrl}
-            onUploaded={(updated: PublicUser) => {
+          <span className="label">Avatar</span>
+          <AvatarPicker
+            value={pendingPreset ? `avatar:${pendingPreset}` : user.avatarUrl}
+            onSelectPreset={setPendingPreset}
+            onUploaded={() => {
+              setPendingPreset(null);
               void refresh();
-              setProfile((prev) => (prev ? { ...prev, user: updated } : prev));
             }}
           />
         </div>

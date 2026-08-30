@@ -1,5 +1,6 @@
 import { prisma } from '../lib/db.js';
 import { defaultAvatarFor } from '../lib/storage.js';
+import { screenUsername } from './moderation.js';
 
 /**
  * Usernames are the site's public identity, so they get real rules: a stable
@@ -37,6 +38,14 @@ export function validateUsernameFormat(username: string): UsernameCheck {
   if (RESERVED_USERNAMES.has(username.toLowerCase())) {
     return { ok: false, reason: 'That username is reserved' };
   }
+
+  // Content screening runs last, so a name that fails for a boring structural
+  // reason gets the boring message rather than an accusatory one.
+  const screened = screenUsername(username);
+  if (!screened.ok) {
+    return { ok: false, reason: screened.message ?? 'That username is not allowed' };
+  }
+
   return { ok: true };
 }
 

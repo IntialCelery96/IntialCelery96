@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { ApiError, api, type PublicUser } from '../lib/api';
+import { ApiError, api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
-import { AvatarUpload } from '../components/AvatarUpload';
+import { AvatarPicker } from '../components/AvatarPicker';
 
 /**
  * One-time account setup: claim a username and optionally add a photo.
@@ -19,6 +19,7 @@ export function SetupPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarPreset, setAvatarPreset] = useState<string | null>(null);
   const navigate = useNavigate();
 
   // Debounced availability check, so the field answers as you type without
@@ -60,6 +61,7 @@ export function SetupPage() {
         username: username.trim(),
         ...(bio.trim() ? { bio: bio.trim() } : {}),
         ...(country.trim() ? { country: country.trim() } : {}),
+        ...(avatarPreset ? { avatarPreset } : {}),
       });
       await refresh();
       navigate('/play', { replace: true });
@@ -110,11 +112,20 @@ export function SetupPage() {
         </div>
 
         <div>
-          <span className="label">Profile photo</span>
-          <AvatarUpload
-            username={username || user.username}
-            avatarUrl={avatarUrl}
-            onUploaded={(updated: PublicUser) => setAvatarUrl(updated.avatarUrl)}
+          <span className="label">Avatar</span>
+          <p className="mb-3 text-xs text-ink-4">
+            Pick one — you can change it later.
+          </p>
+          <AvatarPicker
+            value={avatarUrl ?? (avatarPreset ? `avatar:${avatarPreset}` : null)}
+            onSelectPreset={(id) => {
+              setAvatarPreset(id);
+              setAvatarUrl(null);
+            }}
+            onUploaded={(url) => {
+              setAvatarUrl(url);
+              setAvatarPreset(null);
+            }}
           />
         </div>
 
