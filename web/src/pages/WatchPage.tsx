@@ -108,7 +108,7 @@ export function WatchPage() {
 
       <p className="mt-4 text-sm text-ink-3">
         {mode?.name ?? game.mode} · {game.rated ? 'rated' : 'casual'}
-        {game.over && ` · ${describeReason(game.over.reason)}`}
+        {game.over && describeReason(game.over.reason) && ` · ${describeReason(game.over.reason)}`}
       </p>
 
       {game.over && (

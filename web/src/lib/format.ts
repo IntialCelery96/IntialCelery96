@@ -57,8 +57,15 @@ export function countryFlag(code: string | null): string {
   );
 }
 
+/**
+ * How a game ended.
+ *
+ * Connecting four is deliberately absent: it is the ordinary way to win at
+ * Connect 4, and saying so adds nothing. Only the unusual endings are worth
+ * naming, which is also what makes them stand out when they do appear.
+ */
 const REASON_TEXT: Record<string, string> = {
-  CONNECT_FOUR: 'by connecting four',
+  CONNECT_FOUR: '',
   BOARD_FULL: 'the board filled up',
   RESIGNATION: 'by resignation',
   TIMEOUT: 'on time',
@@ -70,6 +77,16 @@ const REASON_TEXT: Record<string, string> = {
 export function describeReason(reason: string | null): string {
   if (!reason) return '';
   return REASON_TEXT[reason] ?? reason.toLowerCase().replace(/_/g, ' ');
+}
+
+/**
+ * A whole sentence for a finished game, with the trailing reason omitted when
+ * there is nothing to say. Callers that would otherwise build "Won " + "" and
+ * leave a dangling space should use this.
+ */
+export function describeOutcome(prefix: string, reason: string | null): string {
+  const detail = describeReason(reason);
+  return detail ? `${prefix} ${detail}` : prefix;
 }
 
 export function initials(name: string): string {

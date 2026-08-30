@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { RequireAuth } from './components/RequireAuth';
 import { BotsPage } from './pages/BotsPage';
+import { CustomizePage } from './pages/CustomizePage';
 import { GamePage } from './pages/GamePage';
 import { HomePage } from './pages/HomePage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
@@ -71,6 +72,14 @@ export function App() {
           element={
             <RequireAuth>
               <SettingsPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/customize"
+          element={
+            <RequireAuth>
+              <CustomizePage />
             </RequireAuth>
           }
         />

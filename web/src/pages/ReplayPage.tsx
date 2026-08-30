@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { COLS, GAME_MODES, type GameModeId, dropRow, parseMoves, replay } from '@connect4gg/engine';
 import { ApiError, api, type GameAnalysis, type GameSummary, type MoveAnalysis } from '../lib/api';
-import { describeReason, formatDate, formatRatingDelta, playerName } from '../lib/format';
+import { describeOutcome, formatDate, formatRatingDelta, playerName } from '../lib/format';
 import { Board } from '../components/Board';
 import { Avatar } from '../components/Avatar';
 import { AnalysisPanel, QUALITY_STYLE } from '../components/AnalysisPanel';
@@ -256,7 +256,7 @@ export function ReplayPage() {
               ? 'Drawn'
               : game.result === 'ABORTED'
                 ? 'Aborted'
-                : `Won ${describeReason(game.endReason)}`}
+                : describeOutcome('Won', game.endReason)}
           </p>
           <p className="mt-1 text-xs text-ink-4">{formatDate(game.startedAt)}</p>
         </div>

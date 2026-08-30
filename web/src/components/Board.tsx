@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { COLS, ROWS, dropRow, type Cell } from '@connect4gg/engine';
 import { playerLabel } from '../lib/format';
+import { useTheme } from '../theme/ThemeProvider';
 
 /**
  * The Connect 4 board.
@@ -57,6 +58,7 @@ export function Board({
   label,
 }: BoardProps) {
   const [hoveredColumn, setHoveredColumn] = useState<number | null>(null);
+  const { boardStyle } = useTheme();
 
   const highlighted = useMemo(() => new Set(highlight ?? []), [highlight]);
   const playable = useMemo(
@@ -104,11 +106,12 @@ export function Board({
       aria-label={label ?? 'Connect 4 board'}
     >
       <div
-        className={`rounded-2xl bg-gradient-to-b from-board to-board-deep shadow-2xl ring-1 ring-board-deep/60 ${
-          compact ? 'p-2' : 'p-3 sm:p-4'
-        } ${disabled ? 'opacity-60' : ''}`}
+        className={`${boardStyle.frame} ${compact ? 'p-2' : 'p-3 sm:p-4'} ${
+          disabled ? 'opacity-60' : ''
+        }`}
+        style={boardStyle.frameStyle}
       >
-        <div className="grid grid-cols-7 gap-1 sm:gap-2">
+        <div className={`grid grid-cols-7 ${boardStyle.gap}`}>
           {rowOrder.map((row) =>
             columnOrder.map((column) => {
               const index = row * COLS + column;
@@ -133,7 +136,7 @@ export function Board({
                   aria-label={`Column ${column + 1}, row ${row + 1}: ${
                     value === 0 ? 'empty' : playerLabel(value === 1 ? 1 : 2)
                   }`}
-                  className={`relative aspect-square rounded-full transition ${
+                  className={`relative aspect-square transition ${boardStyle.slot} ${
                     columnPlayable ? 'cursor-pointer' : 'cursor-default'
                   } ${
                     columnPlayable && hoveredColumn === column
@@ -185,7 +188,7 @@ export function Board({
       </div>
 
       {!compact && (
-        <div className="mt-2 grid grid-cols-7 gap-1 px-3 sm:gap-2 sm:px-4">
+        <div className={`mt-2 grid grid-cols-7 px-3 sm:px-4 ${boardStyle.gap}`}>
           {columnOrder.map((column) => (
             <div key={column} className="text-center text-xs text-ink-4">
               {column + 1}

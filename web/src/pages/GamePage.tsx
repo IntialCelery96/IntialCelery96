@@ -378,7 +378,9 @@ function GameOverPanel({
   return (
     <div className="card animate-fadeUp">
       <h2 className="text-xl font-bold">{headline}</h2>
-      <p className="mt-1 text-sm text-ink-3">{describeReason(over.reason)}</p>
+      {describeReason(over.reason) && (
+        <p className="mt-1 text-sm text-ink-3">{describeReason(over.reason)}</p>
+      )}
 
       {myChange && (
         <div className="mt-4 flex items-baseline gap-2">

@@ -187,7 +187,8 @@ function GameRow({ game, viewerId }: { game: GameSummary; viewerId: string }) {
         </p>
         <p className="text-xs text-ink-4">
           {GAME_MODES[game.mode as GameModeId]?.name ?? game.mode} ·{' '}
-          {game.rated ? 'rated' : 'casual'} · {describeReason(game.endReason)}
+          {game.rated ? 'rated' : 'casual'}
+          {describeReason(game.endReason) && ` · ${describeReason(game.endReason)}`}
         </p>
       </div>
 

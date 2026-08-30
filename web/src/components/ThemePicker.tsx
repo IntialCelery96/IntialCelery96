@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTheme } from '../theme/ThemeProvider';
 
 /**
@@ -100,6 +101,14 @@ export function ThemePicker({ variant = 'menu' }: { variant?: 'menu' | 'grid' })
               )}
             </button>
           ))}
+
+          <Link
+            to="/customize"
+            onClick={() => setOpen(false)}
+            className="mt-1 block border-t border-line px-2.5 py-2 text-xs text-accent-text hover:underline"
+          >
+            Board style and disc colours →
+          </Link>
         </div>
       )}
     </div>

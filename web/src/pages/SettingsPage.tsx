@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { ApiError, api, type ProfileResponse } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { AvatarPicker } from '../components/AvatarPicker';
-import { ThemePicker } from '../components/ThemePicker';
+
 
 export function SettingsPage() {
   const { user, refresh, loading } = useAuth();
@@ -62,12 +62,16 @@ export function SettingsPage() {
     <div className="mx-auto max-w-lg py-4">
       <h1 className="mb-6 text-2xl font-bold">Settings</h1>
 
-      <section className="card mb-5">
-        <h2 className="mb-1 text-sm font-semibold text-ink-2">Theme</h2>
-        <p className="mb-3 text-xs text-ink-4">
-          Applies everywhere, including the board. Saved to this browser.
-        </p>
-        <ThemePicker variant="grid" />
+      <section className="card mb-5 flex flex-wrap items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-sm font-semibold text-ink-2">Appearance</h2>
+          <p className="text-xs text-ink-4">
+            Theme, board style and disc colours live on their own page.
+          </p>
+        </div>
+        <Link to="/customize" className="btn-secondary text-sm">
+          Customize
+        </Link>
       </section>
 
       <form onSubmit={save} className="card space-y-5">
