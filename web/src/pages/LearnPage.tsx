@@ -20,9 +20,9 @@ interface PuzzleSummary {
 const TIERS = ['beginner', 'intermediate', 'advanced'] as const;
 
 const TIER_STYLE: Record<string, string> = {
-  beginner: 'bg-emerald-500/15 text-emerald-300',
-  intermediate: 'bg-amber-500/15 text-amber-300',
-  advanced: 'bg-rose-500/15 text-rose-300',
+  beginner: 'bg-good/15 text-good',
+  intermediate: 'bg-warn/15 text-warn',
+  advanced: 'bg-bad/15 text-bad',
 };
 
 /**
@@ -53,27 +53,27 @@ export function LearnPage() {
   return (
     <div>
       <h1 className="mb-1 text-2xl font-bold">Learn</h1>
-      <p className="mb-6 max-w-prose text-sm text-slate-400">
+      <p className="mb-6 max-w-prose text-sm text-ink-3">
         Connect 4 is a solved game with real theory behind it — center control, odd and even
         threats, forced sequences. This section is being built out; the lessons below are the first
         of them.
       </p>
 
       {loading ? (
-        <p className="text-slate-400">Loading…</p>
+        <p className="text-ink-3">Loading…</p>
       ) : (
         <div className="space-y-8">
           <section>
             <h2 className="mb-3 text-lg font-semibold">Lessons</h2>
             {lessons.length === 0 ? (
-              <p className="card text-sm text-slate-400">No lessons published yet.</p>
+              <p className="card text-sm text-ink-3">No lessons published yet.</p>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
                 {lessons.map((lesson) => (
                   <Link
                     key={lesson.slug}
                     to={`/learn/${lesson.slug}`}
-                    className="card transition hover:border-slate-700"
+                    className="card transition hover:border-line-2"
                   >
                     <div className="mb-2 flex items-start justify-between gap-2">
                       <h3 className="font-semibold">{lesson.title}</h3>
@@ -81,7 +81,7 @@ export function LearnPage() {
                         {lesson.difficulty}
                       </span>
                     </div>
-                    <p className="text-sm text-slate-400">{lesson.summary}</p>
+                    <p className="text-sm text-ink-3">{lesson.summary}</p>
                   </Link>
                 ))}
               </div>
@@ -91,14 +91,14 @@ export function LearnPage() {
           <section>
             <h2 className="mb-3 text-lg font-semibold">Puzzles</h2>
             {puzzles.length === 0 ? (
-              <p className="card text-sm text-slate-400">No puzzles published yet.</p>
+              <p className="card text-sm text-ink-3">No puzzles published yet.</p>
             ) : (
               <div className="grid gap-3 sm:grid-cols-3">
                 {puzzles.map((puzzle) => (
                   <Link
                     key={puzzle.slug}
                     to={`/learn/puzzle/${puzzle.slug}`}
-                    className="card transition hover:border-slate-700"
+                    className="card transition hover:border-line-2"
                   >
                     <h3 className="font-semibold">{puzzle.title}</h3>
                     <span className={`chip mt-2 ${TIER_STYLE[puzzle.difficulty] ?? ''}`}>
@@ -112,17 +112,17 @@ export function LearnPage() {
 
           <section className="card">
             <h2 className="mb-2 text-lg font-semibold">What's coming</h2>
-            <p className="mb-3 text-sm text-slate-400">
+            <p className="mb-3 text-sm text-ink-3">
               The planned curriculum, roughly in the order it will be taught:
             </p>
-            <ul className="grid gap-2 text-sm text-slate-400 sm:grid-cols-2">
+            <ul className="grid gap-2 text-sm text-ink-3 sm:grid-cols-2">
               {TIERS.map((tier) => (
                 <li key={tier}>
                   <span className={`chip ${TIER_STYLE[tier]}`}>{tier}</span>
                 </li>
               ))}
             </ul>
-            <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-slate-400">
+            <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-ink-3">
               <li>Opening theory — why the center column decides the game</li>
               <li>Odd and even threat theory</li>
               <li>Trap patterns, including the classic "7 trap"</li>

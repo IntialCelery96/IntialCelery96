@@ -80,7 +80,7 @@ export function LessonBoard({ moves, highlight, guided, compact, caption }: Less
   return (
     <figure className="my-4">
       {guided?.prompt && (
-        <p className="mb-3 font-medium text-slate-200">{guided.prompt}</p>
+        <p className="mb-3 font-medium text-ink">{guided.prompt}</p>
       )}
 
       <div className="flex justify-center">
@@ -96,15 +96,15 @@ export function LessonBoard({ moves, highlight, guided, compact, caption }: Less
       </div>
 
       {caption && (
-        <figcaption className="mt-2 text-center text-sm text-slate-400">{caption}</figcaption>
+        <figcaption className="mt-2 text-center text-sm text-ink-3">{caption}</figcaption>
       )}
 
       {attempt && (
         <div
           className={`mt-3 rounded-lg border p-3 text-sm ${
             attempt.correct
-              ? 'border-emerald-700 bg-emerald-950/40 text-emerald-200'
-              : 'border-rose-800 bg-rose-950/40 text-rose-200'
+              ? 'border-good bg-good/40 text-good'
+              : 'border-bad bg-bad/40 text-bad'
           }`}
           role="status"
         >

@@ -31,7 +31,7 @@ export function Avatar({ username, avatarUrl, color, size = 'md', isBot }: Avata
         src={avatarUrl}
         alt=""
         className={`${SIZES[size]} shrink-0 rounded-full object-cover ${
-          isBot ? 'ring-2 ring-sky-500/60' : 'ring-1 ring-slate-700'
+          isBot ? 'ring-2 ring-accent/60' : 'ring-1 ring-line-2'
         }`}
       />
     );
@@ -39,8 +39,11 @@ export function Avatar({ username, avatarUrl, color, size = 'md', isBot }: Avata
 
   return (
     <div
+      // White, not a theme token: these initials sit on the generated avatar
+      // colour rather than on a themed surface, and that colour is mid-lightness
+      // in every theme.
       className={`${SIZES[size]} flex shrink-0 items-center justify-center rounded-full font-semibold text-white ${
-        isBot ? 'ring-2 ring-sky-500/60' : 'ring-1 ring-slate-700'
+        isBot ? 'ring-2 ring-accent/60' : 'ring-1 ring-line-2'
       }`}
       style={{ backgroundColor: color ?? '#334155' }}
       aria-hidden="true"

@@ -61,7 +61,7 @@ export function WatchPage() {
   if (gone) {
     return (
       <div className="py-16 text-center">
-        <p className="text-slate-400">That game has finished.</p>
+        <p className="text-ink-3">That game has finished.</p>
         <Link to={`/replay/${gameId}`} className="btn-secondary mt-4">
           Watch the replay
         </Link>
@@ -69,13 +69,13 @@ export function WatchPage() {
     );
   }
 
-  if (!game) return <p className="py-16 text-center text-slate-400">Connecting…</p>;
+  if (!game) return <p className="py-16 text-center text-ink-3">Connecting…</p>;
 
   const mode = GAME_MODES[game.mode as GameModeId];
 
   return (
     <div className="flex flex-col items-center">
-      <span className="chip mb-3 bg-slate-800 text-slate-300">Spectating</span>
+      <span className="chip mb-3 bg-surface-2 text-ink-2">Spectating</span>
 
       <div className="mb-3 w-full max-w-xl">
         <PlayerBar
@@ -104,7 +104,7 @@ export function WatchPage() {
         />
       </div>
 
-      <p className="mt-4 text-sm text-slate-400">
+      <p className="mt-4 text-sm text-ink-3">
         {mode?.name ?? game.mode} · {game.rated ? 'rated' : 'casual'}
         {game.over && ` · ${describeReason(game.over.reason)}`}
       </p>

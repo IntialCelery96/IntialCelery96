@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { ClockSnapshot, SeatPayload } from '../lib/socket';
+import { playerLabel } from '../lib/format';
 import { Avatar } from './Avatar';
 import { Clock } from './Clock';
 
@@ -19,16 +20,16 @@ export function PlayerBar({ seat, player, clock, isYou, active }: PlayerBarProps
   return (
     <div
       className={`flex items-center gap-3 rounded-xl border px-3 py-2 transition ${
-        active ? 'border-sky-500/70 bg-sky-500/5' : 'border-slate-800 bg-slate-900/40'
+        active ? 'border-accent/70 bg-accent/5' : 'border-surface-2 bg-surface/40'
       }`}
     >
       <span
         className={`h-4 w-4 shrink-0 rounded-full ${
           player === 1
-            ? 'bg-gradient-to-br from-red-disc to-red-discDark'
-            : 'bg-gradient-to-br from-yellow-disc to-yellow-discDark'
+            ? 'bg-gradient-to-br from-p1 to-p1-deep'
+            : 'bg-gradient-to-br from-p2 to-p2-deep'
         }`}
-        aria-label={player === 1 ? 'Red' : 'Yellow'}
+        aria-label={playerLabel(player)}
       />
 
       <Avatar username={seat.username} avatarUrl={seat.avatarUrl} size="sm" isBot={Boolean(seat.botId)} />
@@ -40,19 +41,19 @@ export function PlayerBar({ seat, player, clock, isYou, active }: PlayerBarProps
           ) : (
             <Link
               to={`/profile/${seat.username}`}
-              className="truncate font-semibold hover:text-sky-300 hover:underline"
+              className="truncate font-semibold hover:text-accent-text hover:underline"
             >
               {seat.username}
             </Link>
           )}
-          {isYou && <span className="chip bg-sky-500/15 text-sky-300">you</span>}
-          {seat.botId && <span className="chip bg-slate-700 text-slate-300">bot</span>}
+          {isYou && <span className="chip bg-accent/15 text-accent-text">you</span>}
+          {seat.botId && <span className="chip bg-line-2 text-ink-2">bot</span>}
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-slate-400">
+        <div className="flex items-center gap-2 text-xs text-ink-3">
           {seat.rating !== null && <span>{seat.rating}</span>}
           {disconnected && (
-            <span className="text-amber-400" role="status">
+            <span className="text-warn" role="status">
               reconnecting…
             </span>
           )}

@@ -48,7 +48,7 @@ export function SearchPage() {
       </form>
 
       {query.length >= 2 && !searching && results.length === 0 && (
-        <p className="text-sm text-slate-400">No players found starting with "{query}".</p>
+        <p className="text-sm text-ink-3">No players found starting with "{query}".</p>
       )}
 
       <ul className="space-y-2">
@@ -56,7 +56,7 @@ export function SearchPage() {
           <li key={user.id}>
             <Link
               to={`/profile/${user.username}`}
-              className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-3 transition hover:border-slate-700"
+              className="flex items-center gap-3 rounded-xl border border-surface-2 bg-surface/40 px-4 py-3 transition hover:border-line-2"
             >
               <Avatar
                 username={user.username}

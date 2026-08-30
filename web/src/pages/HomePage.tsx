@@ -26,11 +26,11 @@ export function HomePage() {
       <section className="text-center">
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
           Connect 4, played{' '}
-          <span className="bg-gradient-to-r from-red-disc to-yellow-disc bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-p1 to-p2 bg-clip-text text-transparent">
             properly
           </span>
         </h1>
-        <p className="mx-auto mt-4 max-w-xl text-slate-400">
+        <p className="mx-auto mt-4 max-w-xl text-ink-3">
           Ranked games against real opponents, ELO ratings for every time control, and bots to
           train against. Free, and no download.
         </p>
@@ -56,7 +56,7 @@ export function HomePage() {
         </div>
 
         {stats && (
-          <p className="mt-6 text-sm text-slate-500">
+          <p className="mt-6 text-sm text-ink-4">
             {stats.players.toLocaleString()} players · {stats.games.toLocaleString()} games played
           </p>
         )}
@@ -71,9 +71,9 @@ export function HomePage() {
               <div key={id} className="card">
                 <div className="flex items-baseline justify-between">
                   <h3 className="font-semibold">{mode.name}</h3>
-                  <span className="font-mono text-sm text-slate-400">{mode.label}</span>
+                  <span className="font-mono text-sm text-ink-3">{mode.label}</span>
                 </div>
-                <p className="mt-1 text-sm text-slate-400">{mode.blurb}</p>
+                <p className="mt-1 text-sm text-ink-3">{mode.blurb}</p>
               </div>
             );
           })}
@@ -91,14 +91,14 @@ export function HomePage() {
                 <li key={game.id}>
                   <Link
                     to={`/replay/${game.id}`}
-                    className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-3 text-sm transition hover:border-slate-700"
+                    className="flex items-center justify-between rounded-xl border border-surface-2 bg-surface/40 px-4 py-3 text-sm transition hover:border-line-2"
                   >
                     <span className="truncate">
                       <span className={game.result === 'PLAYER1_WIN' ? 'font-semibold' : ''}>{p1}</span>
-                      <span className="mx-2 text-slate-600">vs</span>
+                      <span className="mx-2 text-ink-4">vs</span>
                       <span className={game.result === 'PLAYER2_WIN' ? 'font-semibold' : ''}>{p2}</span>
                     </span>
-                    <span className="shrink-0 text-xs text-slate-500">
+                    <span className="shrink-0 text-xs text-ink-4">
                       {game.endedAt ? formatRelative(game.endedAt) : ''}
                     </span>
                   </Link>

@@ -32,7 +32,7 @@ export function Clock({ snapshot, player, isYou }: ClockProps) {
 
   if (snapshot.untimed) {
     return (
-      <div className="rounded-lg bg-slate-800/60 px-3 py-1.5 font-mono text-lg text-slate-400">
+      <div className="rounded-lg bg-surface-2/60 px-3 py-1.5 font-mono text-lg text-ink-3">
         ∞
       </div>
     );
@@ -50,9 +50,9 @@ export function Clock({ snapshot, player, isYou }: ClockProps) {
       className={`rounded-lg px-3 py-1.5 font-mono text-lg tabular-nums transition ${
         isRunning
           ? critical
-            ? 'bg-rose-950 text-rose-300 ring-1 ring-rose-500'
-            : 'bg-slate-700 text-white'
-          : 'bg-slate-800/60 text-slate-400'
+            ? 'bg-bad text-bad ring-1 ring-bad'
+            : 'bg-line-2 text-ink'
+          : 'bg-surface-2/60 text-ink-3'
       } ${isYou ? 'font-semibold' : ''}`}
       aria-label={`${isYou ? 'Your' : "Opponent's"} clock`}
       role="timer"

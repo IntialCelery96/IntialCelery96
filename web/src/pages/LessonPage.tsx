@@ -31,17 +31,17 @@ export function LessonPage() {
       .catch(() => setError('That lesson could not be found.'));
   }, [slug]);
 
-  if (error) return <p className="text-center text-slate-400">{error}</p>;
-  if (!lesson) return <p className="text-center text-slate-400">Loading…</p>;
+  if (error) return <p className="text-center text-ink-3">{error}</p>;
+  if (!lesson) return <p className="text-center text-ink-3">Loading…</p>;
 
   return (
     <article className="mx-auto max-w-2xl">
-      <Link to="/learn" className="text-sm text-sky-400 hover:underline">
+      <Link to="/learn" className="text-sm text-accent-2 hover:underline">
         ← All lessons
       </Link>
 
       <h1 className="mt-3 text-3xl font-bold">{lesson.title}</h1>
-      <p className="mt-2 text-slate-400">{lesson.summary}</p>
+      <p className="mt-2 text-ink-3">{lesson.summary}</p>
 
       <div className="mt-8 space-y-4">
         {lesson.blocks.map((block, index) => (
@@ -49,7 +49,7 @@ export function LessonPage() {
         ))}
       </div>
 
-      <div className="mt-10 border-t border-slate-800 pt-6">
+      <div className="mt-10 border-t border-surface-2 pt-6">
         <Link to="/play" className="btn-primary">
           Try it in a game
         </Link>
@@ -61,13 +61,13 @@ export function LessonPage() {
 function LessonBlockView({ block }: { block: LessonBlock }) {
   switch (block.kind) {
     case 'prose':
-      return <p className="leading-relaxed text-slate-300">{block.text}</p>;
+      return <p className="leading-relaxed text-ink-2">{block.text}</p>;
 
     case 'keyIdea':
       return (
-        <aside className="rounded-xl border-l-4 border-sky-500 bg-sky-950/30 p-4">
-          <p className="text-sm font-semibold uppercase tracking-wide text-sky-400">Key idea</p>
-          <p className="mt-1 text-slate-200">{block.text}</p>
+        <aside className="rounded-xl border-l-4 border-accent bg-accent/30 p-4">
+          <p className="text-sm font-semibold uppercase tracking-wide text-accent-2">Key idea</p>
+          <p className="mt-1 text-ink">{block.text}</p>
         </aside>
       );
 
@@ -83,7 +83,7 @@ function LessonBlockView({ block }: { block: LessonBlock }) {
 
     case 'tryIt':
       return (
-        <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+        <div className="rounded-xl border border-surface-2 bg-surface/40 p-4">
           <LessonBoard
             moves={block.moves}
             compact

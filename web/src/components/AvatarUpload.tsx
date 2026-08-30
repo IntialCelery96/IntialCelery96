@@ -95,8 +95,8 @@ export function AvatarUpload({ username, avatarUrl, onUploaded }: AvatarUploadPr
           )}
         </div>
 
-        <p className="text-xs text-slate-500">PNG, JPEG, WebP or GIF. Cropped to a square.</p>
-        {error && <p className="text-xs text-rose-400">{error}</p>}
+        <p className="text-xs text-ink-4">PNG, JPEG, WebP or GIF. Cropped to a square.</p>
+        {error && <p className="text-xs text-bad">{error}</p>}
       </div>
     </div>
   );

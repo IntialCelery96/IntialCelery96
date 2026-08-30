@@ -47,12 +47,12 @@ export function LoginPage({ mode }: { mode: 'login' | 'register' }) {
   return (
     <div className="mx-auto max-w-sm py-8">
       <h1 className="mb-1 text-2xl font-bold">{isRegister ? 'Create an account' : 'Sign in'}</h1>
-      <p className="mb-6 text-sm text-slate-400">
+      <p className="mb-6 text-sm text-ink-3">
         {isRegister ? 'Free, and takes a minute.' : 'Welcome back.'}
       </p>
 
       {oauthError && OAUTH_ERRORS[oauthError] && (
-        <p className="mb-4 rounded-lg bg-rose-950/60 px-3 py-2 text-sm text-rose-300" role="alert">
+        <p className="mb-4 rounded-lg bg-bad/60 px-3 py-2 text-sm text-bad" role="alert">
           {OAUTH_ERRORS[oauthError]}
         </p>
       )}
@@ -88,12 +88,12 @@ export function LoginPage({ mode }: { mode: 'login' | 'register' }) {
             className="input"
           />
           {isRegister && (
-            <p className="mt-1 text-xs text-slate-500">At least 8 characters.</p>
+            <p className="mt-1 text-xs text-ink-4">At least 8 characters.</p>
           )}
         </div>
 
         {error && (
-          <p className="rounded-lg bg-rose-950/60 px-3 py-2 text-sm text-rose-300" role="alert">
+          <p className="rounded-lg bg-bad/60 px-3 py-2 text-sm text-bad" role="alert">
             {error}
           </p>
         )}
@@ -104,10 +104,10 @@ export function LoginPage({ mode }: { mode: 'login' | 'register' }) {
 
         {googleEnabled && (
           <>
-            <div className="flex items-center gap-3 text-xs text-slate-500">
-              <span className="h-px flex-1 bg-slate-800" />
+            <div className="flex items-center gap-3 text-xs text-ink-4">
+              <span className="h-px flex-1 bg-surface-2" />
               or
-              <span className="h-px flex-1 bg-slate-800" />
+              <span className="h-px flex-1 bg-surface-2" />
             </div>
             <a href="/api/auth/google" className="btn-secondary w-full">
               Continue with Google
@@ -116,9 +116,9 @@ export function LoginPage({ mode }: { mode: 'login' | 'register' }) {
         )}
       </form>
 
-      <p className="mt-4 text-center text-sm text-slate-400">
+      <p className="mt-4 text-center text-sm text-ink-3">
         {isRegister ? 'Already have an account? ' : "Don't have an account? "}
-        <Link to={isRegister ? '/login' : '/register'} className="text-sky-400 hover:underline">
+        <Link to={isRegister ? '/login' : '/register'} className="text-accent-2 hover:underline">
           {isRegister ? 'Sign in' : 'Sign up'}
         </Link>
       </p>

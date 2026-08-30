@@ -356,17 +356,17 @@ export const lessonBlocks = [
   },
   {
     kind: 'board' as const,
-    caption: 'Red owns the center; Yellow has taken an edge and is already worse.',
+    caption: 'The first player owns the centre; the second has taken an edge and is already worse.',
     moves: [3, 0, 3],
     highlight: [3, 10],
   },
   {
     kind: 'tryIt' as const,
-    prompt: 'Red has opened in the center. You are Yellow. Where do you play?',
+    prompt: 'Your opponent opened in the centre. Where do you play?',
     moves: [3],
     answers: [3, 2, 4],
     explanation:
-      'Play on or next to the center. Stacking directly on top (column 4) denies Red the second center square; columns 3 and 5 keep you in the fight for the middle. An edge move hands Red a free advantage.',
+      'Play on or next to the centre. Stacking directly on top (column 4) denies your opponent the second centre square; columns 3 and 5 keep you in the fight for the middle. An edge move hands them a free advantage.',
   },
   {
     kind: 'prose' as const,

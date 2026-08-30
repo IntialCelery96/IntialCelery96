@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { ApiError, api, type ProfileResponse, type PublicUser } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { AvatarUpload } from '../components/AvatarUpload';
+import { ThemePicker } from '../components/ThemePicker';
 
 export function SettingsPage() {
   const { user, refresh, loading } = useAuth();
@@ -26,7 +27,7 @@ export function SettingsPage() {
       .catch(() => setMessage({ kind: 'error', text: 'Could not load your profile.' }));
   }, [user?.username]);
 
-  if (loading) return <p className="py-20 text-center text-slate-400">Loading…</p>;
+  if (loading) return <p className="py-20 text-center text-ink-3">Loading…</p>;
   if (!user) return <Navigate to="/login" replace />;
   if (!user.setupComplete) return <Navigate to="/setup" replace />;
 
@@ -57,6 +58,14 @@ export function SettingsPage() {
     <div className="mx-auto max-w-lg py-4">
       <h1 className="mb-6 text-2xl font-bold">Settings</h1>
 
+      <section className="card mb-5">
+        <h2 className="mb-1 text-sm font-semibold text-ink-2">Theme</h2>
+        <p className="mb-3 text-xs text-ink-4">
+          Applies everywhere, including the board. Saved to this browser.
+        </p>
+        <ThemePicker variant="grid" />
+      </section>
+
       <form onSubmit={save} className="card space-y-5">
         <div>
           <span className="label">Profile photo</span>
@@ -82,7 +91,7 @@ export function SettingsPage() {
             minLength={3}
             maxLength={20}
           />
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-ink-4">
             You can change your username once every 30 days.
           </p>
         </div>
@@ -98,7 +107,7 @@ export function SettingsPage() {
             className="input min-h-20 resize-y"
             maxLength={300}
           />
-          <p className="mt-1 text-xs text-slate-500">{bio.length}/300</p>
+          <p className="mt-1 text-xs text-ink-4">{bio.length}/300</p>
         </div>
 
         <div>
@@ -118,8 +127,8 @@ export function SettingsPage() {
           <p
             className={`rounded-lg px-3 py-2 text-sm ${
               message.kind === 'ok'
-                ? 'bg-emerald-950/60 text-emerald-300'
-                : 'bg-rose-950/60 text-rose-300'
+                ? 'bg-good/60 text-good'
+                : 'bg-bad/60 text-bad'
             }`}
             role="status"
           >

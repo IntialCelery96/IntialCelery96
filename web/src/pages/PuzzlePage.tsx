@@ -30,18 +30,18 @@ export function PuzzlePage() {
       .catch(() => setError('That puzzle could not be found.'));
   }, [slug]);
 
-  if (error) return <p className="text-center text-slate-400">{error}</p>;
-  if (!puzzle) return <p className="text-center text-slate-400">Loading…</p>;
+  if (error) return <p className="text-center text-ink-3">{error}</p>;
+  if (!puzzle) return <p className="text-center text-ink-3">Loading…</p>;
 
   return (
     <div className="mx-auto max-w-2xl">
-      <Link to="/learn" className="text-sm text-sky-400 hover:underline">
+      <Link to="/learn" className="text-sm text-accent-2 hover:underline">
         ← All puzzles
       </Link>
 
       <h1 className="mt-3 text-3xl font-bold">{puzzle.title}</h1>
-      <p className="mt-2 text-slate-400">
-        You are playing {puzzle.solver === 1 ? 'Red' : 'Yellow'}.
+      <p className="mt-2 text-ink-3">
+        You are playing {puzzle.solver === 1 ? 'first' : 'second'}.
       </p>
 
       <LessonBoard

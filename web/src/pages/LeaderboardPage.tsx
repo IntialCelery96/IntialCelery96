@@ -22,7 +22,7 @@ export function LeaderboardPage() {
   return (
     <div>
       <h1 className="mb-1 text-2xl font-bold">Leaderboard</h1>
-      <p className="mb-5 text-sm text-slate-400">
+      <p className="mb-5 text-sm text-ink-3">
         Top players by rating. Provisional accounts (under 30 games) are not listed.
       </p>
 
@@ -33,7 +33,7 @@ export function LeaderboardPage() {
             type="button"
             onClick={() => setMode(id)}
             className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
-              mode === id ? 'bg-sky-500 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              mode === id ? 'bg-accent text-on-accent' : 'bg-surface-2 text-ink-2 hover:bg-line-2'
             }`}
           >
             {GAME_MODES[id].name}
@@ -42,18 +42,18 @@ export function LeaderboardPage() {
       </div>
 
       {loading ? (
-        <p className="text-slate-400">Loading…</p>
+        <p className="text-ink-3">Loading…</p>
       ) : entries.length === 0 ? (
-        <div className="card text-center text-slate-400">
+        <div className="card text-center text-ink-3">
           <p>No ranked players in {GAME_MODES[mode].name} yet.</p>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-ink-4">
             Play 30 rated games in this mode to appear here.
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-800">
+        <div className="overflow-x-auto rounded-xl border border-surface-2">
           <table className="w-full text-sm">
-            <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-400">
+            <thead className="bg-surface text-left text-xs uppercase tracking-wide text-ink-3">
               <tr>
                 <th className="px-4 py-3">#</th>
                 <th className="px-4 py-3">Player</th>
@@ -63,14 +63,14 @@ export function LeaderboardPage() {
                 <th className="px-4 py-3 text-right">Games</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800">
+            <tbody className="divide-y divide-surface-2">
               {entries.map((entry) => (
-                <tr key={entry.userId} className="hover:bg-slate-900/60">
-                  <td className="px-4 py-3 font-mono text-slate-400">{entry.rank}</td>
+                <tr key={entry.userId} className="hover:bg-surface/60">
+                  <td className="px-4 py-3 font-mono text-ink-3">{entry.rank}</td>
                   <td className="px-4 py-3">
                     <Link
                       to={`/profile/${entry.username}`}
-                      className="flex items-center gap-2 font-medium hover:text-sky-300"
+                      className="flex items-center gap-2 font-medium hover:text-accent-text"
                     >
                       <Avatar
                         username={entry.username}
@@ -83,13 +83,13 @@ export function LeaderboardPage() {
                     </Link>
                   </td>
                   <td className="px-4 py-3 text-right font-semibold tabular-nums">{entry.rating}</td>
-                  <td className="hidden px-4 py-3 text-right tabular-nums text-slate-400 sm:table-cell">
+                  <td className="hidden px-4 py-3 text-right tabular-nums text-ink-3 sm:table-cell">
                     {entry.peak}
                   </td>
-                  <td className="hidden px-4 py-3 text-right tabular-nums text-slate-400 sm:table-cell">
+                  <td className="hidden px-4 py-3 text-right tabular-nums text-ink-3 sm:table-cell">
                     {entry.wins}/{entry.losses}/{entry.draws}
                   </td>
-                  <td className="px-4 py-3 text-right tabular-nums text-slate-400">{entry.games}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-ink-3">{entry.games}</td>
                 </tr>
               ))}
             </tbody>

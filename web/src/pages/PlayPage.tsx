@@ -73,7 +73,7 @@ export function PlayPage() {
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
       <section>
         <h1 className="mb-1 text-2xl font-bold">Play</h1>
-        <p className="mb-5 text-sm text-slate-400">
+        <p className="mb-5 text-sm text-ink-3">
           Pick a time control. Each one has its own rating.
         </p>
 
@@ -89,17 +89,17 @@ export function PlayPage() {
                 disabled={searching}
                 className={`rounded-xl border p-4 text-left transition disabled:opacity-60 ${
                   selected
-                    ? 'border-sky-500 bg-sky-500/10'
-                    : 'border-slate-800 bg-slate-900/40 hover:border-slate-700'
+                    ? 'border-accent bg-accent/10'
+                    : 'border-surface-2 bg-surface/40 hover:border-line-2'
                 }`}
               >
                 <div className="flex items-baseline justify-between">
                   <span className="font-semibold">{info.name}</span>
-                  <span className="font-mono text-sm text-slate-400">{info.label}</span>
+                  <span className="font-mono text-sm text-ink-3">{info.label}</span>
                 </div>
-                <p className="mt-1 text-sm text-slate-400">{info.blurb}</p>
+                <p className="mt-1 text-sm text-ink-3">{info.blurb}</p>
                 {!info.rated && (
-                  <span className="chip mt-2 bg-slate-800 text-slate-400">unrated</span>
+                  <span className="chip mt-2 bg-surface-2 text-ink-3">unrated</span>
                 )}
               </button>
             );
@@ -107,7 +107,7 @@ export function PlayPage() {
         </div>
 
         {error && (
-          <p className="mt-4 rounded-lg bg-rose-950/60 px-3 py-2 text-sm text-rose-300" role="alert">
+          <p className="mt-4 rounded-lg bg-bad/60 px-3 py-2 text-sm text-bad" role="alert">
             {error}
           </p>
         )}
@@ -127,8 +127,8 @@ export function PlayPage() {
         <ChallengePanel disabled={searching} />
         <RecentOpponents />
         <div className="card">
-          <h2 className="mb-2 text-sm font-semibold text-slate-300">Practise instead</h2>
-          <p className="mb-3 text-sm text-slate-400">
+          <h2 className="mb-2 text-sm font-semibold text-ink-2">Practise instead</h2>
+          <p className="mb-3 text-sm text-ink-3">
             Six bots, from a punching bag to something that will genuinely beat you.
           </p>
           <Link to="/bots" className="btn-secondary w-full">
@@ -153,12 +153,12 @@ function SearchingPanel({
   return (
     <div className="card animate-fadeUp">
       <div className="flex items-center gap-3">
-        <span className="h-3 w-3 animate-ping rounded-full bg-sky-400" />
+        <span className="h-3 w-3 animate-ping rounded-full bg-accent-2" />
         <div className="flex-1">
           <p className="font-medium">
-            Searching… <span className="font-mono text-slate-400">{formatDuration(waited)}</span>
+            Searching… <span className="font-mono text-ink-3">{formatDuration(waited)}</span>
           </p>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-ink-3">
             {band === null || band === undefined
               ? 'Matching with any opponent'
               : `Within ±${band} rating`}
@@ -171,7 +171,7 @@ function SearchingPanel({
       </div>
 
       {status && status.playersWaiting > 1 && (
-        <p className="mt-3 text-xs text-slate-500">
+        <p className="mt-3 text-xs text-ink-4">
           {status.playersWaiting} players waiting in this pool.
         </p>
       )}
@@ -208,7 +208,7 @@ function ChallengePanel({ disabled }: { disabled: boolean }) {
 
   return (
     <form onSubmit={send} className="card">
-      <h2 className="mb-3 text-sm font-semibold text-slate-300">Challenge a player</h2>
+      <h2 className="mb-3 text-sm font-semibold text-ink-2">Challenge a player</h2>
 
       <input
         value={username}
@@ -233,13 +233,13 @@ function ChallengePanel({ disabled }: { disabled: boolean }) {
         ))}
       </select>
 
-      <label className="mb-3 flex items-center gap-2 text-sm text-slate-400">
+      <label className="mb-3 flex items-center gap-2 text-sm text-ink-3">
         <input
           type="checkbox"
           checked={rated}
           onChange={(event) => setRated(event.target.checked)}
           disabled={disabled || !GAME_MODES[mode].rated}
-          className="rounded border-slate-600 bg-slate-800"
+          className="rounded border-ink-4 bg-surface-2"
         />
         Rated
       </label>
@@ -248,7 +248,7 @@ function ChallengePanel({ disabled }: { disabled: boolean }) {
         Send challenge
       </button>
 
-      {message && <p className="mt-2 text-xs text-slate-400">{message}</p>}
+      {message && <p className="mt-2 text-xs text-ink-3">{message}</p>}
     </form>
   );
 }
@@ -267,13 +267,13 @@ function RecentOpponents() {
 
   return (
     <div className="card">
-      <h2 className="mb-3 text-sm font-semibold text-slate-300">Recent opponents</h2>
+      <h2 className="mb-3 text-sm font-semibold text-ink-2">Recent opponents</h2>
       <ul className="space-y-2">
         {opponents.slice(0, 6).map((opponent) => (
           <li key={opponent.id}>
             <Link
               to={`/profile/${opponent.username}`}
-              className="flex items-center gap-2 rounded-lg p-1 text-sm hover:bg-slate-800"
+              className="flex items-center gap-2 rounded-lg p-1 text-sm hover:bg-surface-2"
             >
               <Avatar
                 username={opponent.username}

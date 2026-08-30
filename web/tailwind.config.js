@@ -3,19 +3,53 @@ export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
+      /**
+       * Semantic colours only — every one resolves to a CSS variable the theme
+       * layer sets, so `bg-surface/60` and friends still compose alpha while
+       * following whichever theme is active. See src/theme/themes.ts.
+       */
       colors: {
-        // The two disc colours, used everywhere a player is identified.
-        red: {
-          disc: '#ef4444',
-          discDark: '#b91c1c',
+        bg: 'rgb(var(--c-bg) / <alpha-value>)',
+        surface: {
+          DEFAULT: 'rgb(var(--c-surface) / <alpha-value>)',
+          2: 'rgb(var(--c-surface-2) / <alpha-value>)',
         },
-        yellow: {
-          disc: '#facc15',
-          discDark: '#ca8a04',
+        line: {
+          DEFAULT: 'rgb(var(--c-line) / <alpha-value>)',
+          2: 'rgb(var(--c-line-2) / <alpha-value>)',
         },
+        ink: {
+          DEFAULT: 'rgb(var(--c-ink) / <alpha-value>)',
+          2: 'rgb(var(--c-ink-2) / <alpha-value>)',
+          3: 'rgb(var(--c-ink-3) / <alpha-value>)',
+          4: 'rgb(var(--c-ink-4) / <alpha-value>)',
+        },
+        accent: {
+          DEFAULT: 'rgb(var(--c-accent) / <alpha-value>)',
+          2: 'rgb(var(--c-accent-2) / <alpha-value>)',
+          text: 'rgb(var(--c-accent-text) / <alpha-value>)',
+        },
+        'on-accent': 'rgb(var(--c-on-accent) / <alpha-value>)',
+
+        good: 'rgb(var(--c-good) / <alpha-value>)',
+        warn: 'rgb(var(--c-warn) / <alpha-value>)',
+        caution: 'rgb(var(--c-caution) / <alpha-value>)',
+        bad: 'rgb(var(--c-bad) / <alpha-value>)',
+        special: 'rgb(var(--c-special) / <alpha-value>)',
+
         board: {
-          DEFAULT: '#1e3a8a',
-          dark: '#172554',
+          DEFAULT: 'rgb(var(--c-board) / <alpha-value>)',
+          deep: 'rgb(var(--c-board-deep) / <alpha-value>)',
+        },
+        slot: 'rgb(var(--c-slot) / <alpha-value>)',
+
+        p1: {
+          DEFAULT: 'rgb(var(--c-p1) / <alpha-value>)',
+          deep: 'rgb(var(--c-p1-deep) / <alpha-value>)',
+        },
+        p2: {
+          DEFAULT: 'rgb(var(--c-p2) / <alpha-value>)',
+          deep: 'rgb(var(--c-p2-deep) / <alpha-value>)',
         },
       },
       fontFamily: {

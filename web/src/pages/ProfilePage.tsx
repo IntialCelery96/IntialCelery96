@@ -47,8 +47,8 @@ export function ProfilePage() {
     }
   }
 
-  if (error) return <p className="text-center text-slate-400">{error}</p>;
-  if (!profile) return <p className="text-center text-slate-400">Loading…</p>;
+  if (error) return <p className="text-center text-ink-3">{error}</p>;
+  if (!profile) return <p className="text-center text-ink-3">Loading…</p>;
 
   const { user, ratings, recentGames } = profile;
 
@@ -67,8 +67,8 @@ export function ProfilePage() {
             {user.username}
             {user.country && <span aria-hidden>{countryFlag(user.country)}</span>}
           </h1>
-          {user.bio && <p className="mt-1 max-w-prose text-sm text-slate-400">{user.bio}</p>}
-          <p className="mt-2 text-xs text-slate-500">
+          {user.bio && <p className="mt-1 max-w-prose text-sm text-ink-3">{user.bio}</p>}
+          <p className="mt-2 text-xs text-ink-4">
             Joined {formatDate(user.createdAt)} · {profile.followers} followers ·{' '}
             {profile.following} following
           </p>
@@ -93,17 +93,17 @@ export function ProfilePage() {
           {ratings.map((rating) => (
             <div key={rating.mode} className="card">
               <div className="flex items-baseline justify-between">
-                <span className="text-sm text-slate-400">
+                <span className="text-sm text-ink-3">
                   {GAME_MODES[rating.mode as GameModeId]?.name ?? rating.mode}
                 </span>
                 {rating.provisional && (
-                  <span className="chip bg-amber-500/15 text-amber-300" title="Fewer than 30 games">
+                  <span className="chip bg-warn/15 text-warn" title="Fewer than 30 games">
                     provisional
                   </span>
                 )}
               </div>
               <div className="mt-1 text-3xl font-bold tabular-nums">{rating.rating}</div>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-ink-4">
                 {rating.games} games · {rating.wins}W {rating.losses}L {rating.draws}D
               </p>
             </div>
@@ -121,7 +121,7 @@ export function ProfilePage() {
                 type="button"
                 onClick={() => setChartMode(id)}
                 className={`rounded px-2 py-1 text-xs font-medium ${
-                  chartMode === id ? 'bg-sky-500 text-white' : 'bg-slate-800 text-slate-400'
+                  chartMode === id ? 'bg-accent text-on-accent' : 'bg-surface-2 text-ink-3'
                 }`}
               >
                 {GAME_MODES[id].name}
@@ -135,7 +135,7 @@ export function ProfilePage() {
       <section>
         <h2 className="mb-3 text-lg font-semibold">Recent games</h2>
         {recentGames.length === 0 ? (
-          <div className="card text-sm text-slate-400">No games played yet.</div>
+          <div className="card text-sm text-ink-3">No games played yet.</div>
         ) : (
           <ul className="space-y-2">
             {recentGames.map((game) => (
@@ -165,10 +165,10 @@ function GameRow({ game, viewerId }: { game: GameSummary; viewerId: string }) {
           : 'loss';
 
   const badge = {
-    win: 'bg-emerald-500/15 text-emerald-300',
-    loss: 'bg-rose-500/15 text-rose-300',
-    draw: 'bg-slate-700 text-slate-300',
-    aborted: 'bg-slate-800 text-slate-500',
+    win: 'bg-good/15 text-good',
+    loss: 'bg-bad/15 text-bad',
+    draw: 'bg-line-2 text-ink-2',
+    aborted: 'bg-surface-2 text-ink-4',
   }[outcome];
 
   const opponentName = them.user?.username ?? them.botName ?? 'Unknown';
@@ -176,16 +176,16 @@ function GameRow({ game, viewerId }: { game: GameSummary; viewerId: string }) {
   return (
     <Link
       to={`/replay/${game.id}`}
-      className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-3 transition hover:border-slate-700"
+      className="flex items-center gap-3 rounded-xl border border-surface-2 bg-surface/40 px-4 py-3 transition hover:border-line-2"
     >
       <span className={`chip w-16 justify-center ${badge}`}>{outcome}</span>
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm">
           vs <span className="font-medium">{opponentName}</span>
-          {them.botId && <span className="ml-1 text-xs text-slate-500">(bot)</span>}
+          {them.botId && <span className="ml-1 text-xs text-ink-4">(bot)</span>}
         </p>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-ink-4">
           {GAME_MODES[game.mode as GameModeId]?.name ?? game.mode} ·{' '}
           {game.rated ? 'rated' : 'casual'} · {describeReason(game.endReason)}
         </p>
@@ -194,7 +194,7 @@ function GameRow({ game, viewerId }: { game: GameSummary; viewerId: string }) {
       {me.ratingDelta !== null && (
         <span
           className={`text-sm font-medium tabular-nums ${
-            me.ratingDelta > 0 ? 'text-emerald-400' : me.ratingDelta < 0 ? 'text-rose-400' : 'text-slate-400'
+            me.ratingDelta > 0 ? 'text-good' : me.ratingDelta < 0 ? 'text-bad' : 'text-ink-3'
           }`}
         >
           {me.ratingDelta > 0 ? '+' : ''}
@@ -202,7 +202,7 @@ function GameRow({ game, viewerId }: { game: GameSummary; viewerId: string }) {
         </span>
       )}
 
-      <span className="hidden text-xs text-slate-500 sm:inline">
+      <span className="hidden text-xs text-ink-4 sm:inline">
         {formatRelative(game.startedAt)}
       </span>
     </Link>

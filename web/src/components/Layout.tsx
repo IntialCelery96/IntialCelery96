@@ -2,6 +2,7 @@ import { NavLink, Outlet, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Avatar } from './Avatar';
 import { ChallengeToasts } from './ChallengeToasts';
+import { ThemePicker } from './ThemePicker';
 
 const NAV = [
   { to: '/play', label: 'Play' },
@@ -15,10 +16,10 @@ export function Layout() {
 
   return (
     <div className="flex min-h-full flex-col">
-      <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-950/85 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-surface-2 bg-bg/85 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-4">
           <Link to="/" className="mr-2 flex items-center gap-2 font-bold tracking-tight">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-red-disc to-yellow-disc text-sm">
+            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-p1 to-p2 text-sm">
               ●
             </span>
             <span className="hidden sm:inline">Connect4.gg</span>
@@ -31,7 +32,7 @@ export function Layout() {
                 to={item.to}
                 className={({ isActive }) =>
                   `whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition ${
-                    isActive ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'
+                    isActive ? 'bg-surface-2 text-ink' : 'text-ink-3 hover:text-ink'
                   }`
                 }
               >
@@ -40,11 +41,13 @@ export function Layout() {
             ))}
           </nav>
 
+          <ThemePicker />
+
           {user?.setupComplete ? (
             <div className="flex items-center gap-2">
               <Link
                 to={`/profile/${user.username}`}
-                className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-slate-800"
+                className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-surface-2"
               >
                 <Avatar username={user.username} avatarUrl={user.avatarUrl} size="sm" />
                 <span className="hidden text-sm font-medium sm:inline">{user.username}</span>
@@ -70,9 +73,9 @@ export function Layout() {
         <Outlet />
       </main>
 
-      <footer className="border-t border-slate-800 py-6 text-center text-xs text-slate-500">
+      <footer className="border-t border-surface-2 py-6 text-center text-xs text-ink-4">
         Connect4.gg — ranked Connect 4.{' '}
-        <Link to="/learn" className="hover:text-slate-300">
+        <Link to="/learn" className="hover:text-ink-2">
           Learn the game
         </Link>
       </footer>

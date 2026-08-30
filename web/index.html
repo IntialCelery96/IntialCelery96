@@ -17,6 +17,33 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Applies the saved theme's ground colour before React mounts, so
+      // switching to a light theme does not flash the dark default on every
+      // load. The full token set is written by the app a moment later.
+      (function () {
+        try {
+          var id = localStorage.getItem('c4-theme');
+          var grounds = {
+            midnight: ['2 6 23', 'dark', '241 245 249'],
+            lab: ['242 241 238', 'light', '17 17 17'],
+            coquice: ['234 241 238', 'light', '16 40 34'],
+            formix: ['13 7 5', 'dark', '255 246 240'],
+            ruined: ['8 20 19', 'dark', '234 228 212'],
+          };
+          var chosen = grounds[id];
+          if (chosen) {
+            var root = document.documentElement;
+            root.style.setProperty('--c-bg', chosen[0]);
+            root.style.setProperty('--c-ink', chosen[2]);
+            root.style.setProperty('color-scheme', chosen[1]);
+            root.dataset.theme = id;
+          }
+        } catch (e) {
+          /* Storage unavailable: the default theme is correct. */
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

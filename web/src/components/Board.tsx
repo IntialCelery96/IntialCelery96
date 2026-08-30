@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { COLS, ROWS, dropRow, type Cell } from '@connect4gg/engine';
+import { playerLabel } from '../lib/format';
 
 /**
  * The Connect 4 board.
@@ -97,7 +98,7 @@ export function Board({
       aria-label={label ?? 'Connect 4 board'}
     >
       <div
-        className={`rounded-2xl bg-gradient-to-b from-board to-board-dark shadow-2xl ring-1 ring-blue-950/60 ${
+        className={`rounded-2xl bg-gradient-to-b from-board to-board-deep shadow-2xl ring-1 ring-board-deep/60 ${
           compact ? 'p-2' : 'p-3 sm:p-4'
         } ${disabled ? 'opacity-60' : ''}`}
       >
@@ -124,16 +125,16 @@ export function Board({
                   onBlur={() => setHoveredColumn(null)}
                   disabled={!columnPlayable}
                   aria-label={`Column ${column + 1}, row ${row + 1}: ${
-                    value === 0 ? 'empty' : value === 1 ? 'red' : 'yellow'
+                    value === 0 ? 'empty' : playerLabel(value === 1 ? 1 : 2)
                   }`}
                   className={`relative aspect-square rounded-full transition ${
                     columnPlayable ? 'cursor-pointer' : 'cursor-default'
                   } ${
                     columnPlayable && hoveredColumn === column
-                      ? 'bg-blue-900/70'
-                      : 'bg-slate-950/80'
-                  } ${isHighlighted ? 'ring-2 ring-emerald-300' : ''} ${
-                    isSuggested && !isHighlighted ? 'ring-2 ring-sky-400' : ''
+                      ? 'bg-board-deep'
+                      : 'bg-slot'
+                  } ${isHighlighted ? 'ring-2 ring-good' : ''} ${
+                    isSuggested && !isHighlighted ? 'ring-2 ring-accent-2' : ''
                   }`}
                 >
                   {value !== 0 && (
@@ -141,8 +142,8 @@ export function Board({
                       key={`${index}-${value}`}
                       className={`absolute inset-[6%] rounded-full shadow-inner ${
                         value === 1
-                          ? 'bg-gradient-to-br from-red-disc to-red-discDark'
-                          : 'bg-gradient-to-br from-yellow-disc to-yellow-discDark'
+                          ? 'bg-gradient-to-br from-p1 to-p1-deep'
+                          : 'bg-gradient-to-br from-p2 to-p2-deep'
                       } ${index === lastMove ? 'ring-2 ring-white/70' : ''} ${
                         isHighlighted ? 'animate-pulseWin' : 'animate-drop'
                       }`}
@@ -151,7 +152,7 @@ export function Board({
 
                   {isSuggested && value === 0 && (
                     <span
-                      className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs font-bold text-sky-300"
+                      className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs font-bold text-accent-text"
                       aria-hidden="true"
                     >
                       ★
@@ -165,8 +166,8 @@ export function Board({
                     <span
                       className={`pointer-events-none absolute inset-[6%] rounded-full border-2 border-dashed ${
                         previewPlayer === 1
-                          ? 'border-red-disc bg-red-disc/10'
-                          : 'border-yellow-disc bg-yellow-disc/10'
+                          ? 'border-p1 bg-p1/10'
+                          : 'border-p2 bg-p2/10'
                       }`}
                     />
                   )}
@@ -180,7 +181,7 @@ export function Board({
       {!compact && (
         <div className="mt-2 grid grid-cols-7 gap-1 px-3 sm:gap-2 sm:px-4">
           {columnOrder.map((column) => (
-            <div key={column} className="text-center text-xs text-slate-500">
+            <div key={column} className="text-center text-xs text-ink-4">
               {column + 1}
             </div>
           ))}

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { COLS, GAME_MODES, type GameModeId, dropRow, parseMoves, replay } from '@connect4gg/engine';
 import { ApiError, api, type GameAnalysis, type GameSummary, type MoveAnalysis } from '../lib/api';
-import { describeReason, formatDate, formatRatingDelta } from '../lib/format';
+import { describeReason, formatDate, formatRatingDelta, playerName } from '../lib/format';
 import { Board } from '../components/Board';
 import { Avatar } from '../components/Avatar';
 import { AnalysisPanel, QUALITY_STYLE } from '../components/AnalysisPanel';
@@ -103,8 +103,8 @@ export function ReplayPage() {
     }
   }
 
-  if (error) return <p className="text-center text-slate-400">{error}</p>;
-  if (!game) return <p className="text-center text-slate-400">Loading…</p>;
+  if (error) return <p className="text-center text-ink-3">{error}</p>;
+  if (!game) return <p className="text-center text-ink-3">Loading…</p>;
 
   const modeInfo = GAME_MODES[game.mode as GameModeId];
   const atEnd = ply === columns.length;
@@ -121,7 +121,7 @@ export function ReplayPage() {
         />
 
         {suggestionIndex !== undefined && currentMove && (
-          <p className="mt-2 text-xs text-sky-300">
+          <p className="mt-2 text-xs text-accent-text">
             ★ marks where column {currentMove.bestColumn + 1} would have landed.
           </p>
         )}
@@ -136,7 +136,7 @@ export function ReplayPage() {
               setPlaying(false);
               setPly(Number(event.target.value));
             }}
-            className="w-full accent-sky-500"
+            className="w-full accent-accent"
             aria-label="Move number"
           />
 
@@ -199,7 +199,7 @@ export function ReplayPage() {
             </button>
           </div>
 
-          <p className="mt-2 text-center text-sm text-slate-400">
+          <p className="mt-2 text-center text-sm text-ink-3">
             Move {ply} of {columns.length}
             {ply > 0 && ` — column ${columns[ply - 1]! + 1}`}
           </p>
@@ -210,7 +210,7 @@ export function ReplayPage() {
         <div className="card">
           <h1 className="mb-3 font-semibold">
             {modeInfo?.name ?? game.mode}
-            <span className="ml-2 text-sm font-normal text-slate-400">
+            <span className="ml-2 text-sm font-normal text-ink-3">
               {game.rated ? 'Rated' : 'Casual'}
             </span>
           </h1>
@@ -220,18 +220,18 @@ export function ReplayPage() {
             <ReplaySide side={game.player2} player={2} isWinner={game.result === 'PLAYER2_WIN'} />
           </div>
 
-          <p className="mt-3 border-t border-slate-800 pt-3 text-sm text-slate-400">
+          <p className="mt-3 border-t border-surface-2 pt-3 text-sm text-ink-3">
             {game.result === 'DRAW'
               ? 'Drawn'
               : game.result === 'ABORTED'
                 ? 'Aborted'
                 : `Won ${describeReason(game.endReason)}`}
           </p>
-          <p className="mt-1 text-xs text-slate-500">{formatDate(game.startedAt)}</p>
+          <p className="mt-1 text-xs text-ink-4">{formatDate(game.startedAt)}</p>
         </div>
 
         <div className="card">
-          <h2 className="mb-2 text-sm font-semibold text-slate-300">Moves</h2>
+          <h2 className="mb-2 text-sm font-semibold text-ink-2">Moves</h2>
           <ol className="grid grid-cols-6 gap-1 font-mono text-xs">
             {columns.map((column, index) => {
               const verdict = byPly.get(index);
@@ -247,10 +247,10 @@ export function ReplayPage() {
                     title={verdict ? `${QUALITY_STYLE[verdict.quality].label}` : undefined}
                     className={`w-full rounded px-1 py-0.5 ${
                       ply === index + 1
-                        ? 'bg-sky-500 text-white'
+                        ? 'bg-accent text-on-accent'
                         : index % 2 === 0
-                          ? 'bg-red-disc/20 text-red-300 hover:bg-red-disc/30'
-                          : 'bg-yellow-disc/20 text-yellow-200 hover:bg-yellow-disc/30'
+                          ? 'bg-p1/20 text-p1 hover:bg-p1/30'
+                          : 'bg-p2/20 text-p2 hover:bg-p2/30'
                     }`}
                   >
                     {column + 1}
@@ -268,15 +268,15 @@ export function ReplayPage() {
               );
             })}
           </ol>
-          {columns.length === 0 && <p className="text-xs text-slate-500">No moves were played.</p>}
+          {columns.length === 0 && <p className="text-xs text-ink-4">No moves were played.</p>}
         </div>
 
         {analysis ? (
           <AnalysisPanel
             analysis={analysis}
             current={currentMove}
-            player1Name={game.player1.user?.username ?? game.player1.botName ?? 'Red'}
-            player2Name={game.player2.user?.username ?? game.player2.botName ?? 'Yellow'}
+            player1Name={game.player1.user?.username ?? game.player1.botName ?? playerName(1)}
+            player2Name={game.player2.user?.username ?? game.player2.botName ?? playerName(2)}
             onSelectPly={(target) => {
               setPlaying(false);
               setPly(target);
@@ -284,8 +284,8 @@ export function ReplayPage() {
           />
         ) : (
           <div className="card">
-            <h2 className="mb-1 text-sm font-semibold text-slate-300">Analysis</h2>
-            <p className="mb-3 text-xs text-slate-500">
+            <h2 className="mb-1 text-sm font-semibold text-ink-2">Analysis</h2>
+            <p className="mb-3 text-xs text-ink-4">
               Have the engine check every move for missed wins and blunders.
             </p>
             <button
@@ -297,7 +297,7 @@ export function ReplayPage() {
               {analysing ? 'Analysing…' : 'Analyze this game'}
             </button>
             {analysisError && (
-              <p className="mt-2 text-xs text-rose-400" role="alert">
+              <p className="mt-2 text-xs text-bad" role="alert">
                 {analysisError}
               </p>
             )}
@@ -327,7 +327,7 @@ function ReplaySide({
     <div className="flex items-center gap-2">
       <span
         className={`h-3 w-3 shrink-0 rounded-full ${
-          player === 1 ? 'bg-red-disc' : 'bg-yellow-disc'
+          player === 1 ? 'bg-p1' : 'bg-p2'
         }`}
       />
       <Avatar
@@ -338,23 +338,23 @@ function ReplaySide({
         isBot={Boolean(side.botId)}
       />
       {side.user ? (
-        <Link to={`/profile/${name}`} className="flex-1 truncate text-sm hover:text-sky-300">
+        <Link to={`/profile/${name}`} className="flex-1 truncate text-sm hover:text-accent-text">
           {name}
         </Link>
       ) : (
         <span className="flex-1 truncate text-sm">{name}</span>
       )}
-      {side.rating !== null && <span className="text-xs text-slate-400">{side.rating}</span>}
+      {side.rating !== null && <span className="text-xs text-ink-3">{side.rating}</span>}
       {side.ratingDelta !== null && (
         <span
           className={`text-xs font-medium ${
-            side.ratingDelta > 0 ? 'text-emerald-400' : 'text-rose-400'
+            side.ratingDelta > 0 ? 'text-good' : 'text-bad'
           }`}
         >
           {formatRatingDelta(side.ratingDelta)}
         </span>
       )}
-      {isWinner && <span className="chip bg-emerald-500/15 text-emerald-300">won</span>}
+      {isWinner && <span className="chip bg-good/15 text-good">won</span>}
     </div>
   );
 }

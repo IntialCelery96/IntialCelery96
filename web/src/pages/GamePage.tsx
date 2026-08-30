@@ -145,13 +145,13 @@ export function GamePage() {
   }, [myTurn, drop]);
 
   if (notFound) {
-    return <p className="text-center text-slate-400">That game could not be found.</p>;
+    return <p className="text-center text-ink-3">That game could not be found.</p>;
   }
 
   if (!game) {
     return (
       <div className="flex justify-center py-20">
-        <p className="text-slate-400">Loading game…</p>
+        <p className="text-ink-3">Loading game…</p>
       </div>
     );
   }
@@ -197,13 +197,13 @@ export function GamePage() {
         </div>
 
         {message && (
-          <p className="mt-3 rounded-lg bg-slate-800 px-3 py-1.5 text-sm text-amber-300" role="alert">
+          <p className="mt-3 rounded-lg bg-surface-2 px-3 py-1.5 text-sm text-warn" role="alert">
             {message}
           </p>
         )}
 
         {!game.over && (
-          <p className="mt-3 text-sm text-slate-400" role="status">
+          <p className="mt-3 text-sm text-ink-3" role="status">
             {spectating
               ? 'You are spectating.'
               : myTurn
@@ -217,9 +217,9 @@ export function GamePage() {
         <div className="card">
           <div className="flex items-baseline justify-between">
             <h2 className="font-semibold">{modeInfo?.name ?? game.mode}</h2>
-            <span className="font-mono text-sm text-slate-400">{modeInfo?.label}</span>
+            <span className="font-mono text-sm text-ink-3">{modeInfo?.label}</span>
           </div>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-ink-4">
             {game.rated ? 'Rated' : 'Unrated'} · {game.moves.length} moves
           </p>
         </div>
@@ -248,8 +248,8 @@ export function GamePage() {
         )}
 
         <div className="card">
-          <h2 className="mb-2 text-sm font-semibold text-slate-300">Share</h2>
-          <p className="mb-2 text-xs text-slate-500">Anyone with this link can watch.</p>
+          <h2 className="mb-2 text-sm font-semibold text-ink-2">Share</h2>
+          <p className="mb-2 text-xs text-ink-4">Anyone with this link can watch.</p>
           <input
             readOnly
             value={`${window.location.origin}/watch/${game.id}`}
@@ -283,7 +283,7 @@ function GameControls({
   return (
     <div className="card space-y-2">
       {theyOffered && (
-        <div className="rounded-lg border border-sky-700 bg-sky-950/40 p-3">
+        <div className="rounded-lg border border-accent bg-accent/40 p-3">
           <p className="mb-2 text-sm">Your opponent offers a draw.</p>
           <div className="flex gap-2">
             <button
@@ -377,7 +377,7 @@ function GameOverPanel({
   return (
     <div className="card animate-fadeUp">
       <h2 className="text-xl font-bold">{headline}</h2>
-      <p className="mt-1 text-sm text-slate-400">{describeReason(over.reason)}</p>
+      <p className="mt-1 text-sm text-ink-3">{describeReason(over.reason)}</p>
 
       {myChange && (
         <div className="mt-4 flex items-baseline gap-2">
@@ -385,10 +385,10 @@ function GameOverPanel({
           <span
             className={`text-lg font-semibold ${
               myChange.delta > 0
-                ? 'text-emerald-400'
+                ? 'text-good'
                 : myChange.delta < 0
-                  ? 'text-rose-400'
-                  : 'text-slate-400'
+                  ? 'text-bad'
+                  : 'text-ink-3'
             }`}
           >
             {formatRatingDelta(myChange.delta)}
@@ -397,9 +397,9 @@ function GameOverPanel({
       )}
 
       {!ratings && game.rated && over.outcome !== 'aborted' && (
-        <p className="mt-2 text-xs text-slate-500">Rating update pending…</p>
+        <p className="mt-2 text-xs text-ink-4">Rating update pending…</p>
       )}
-      {!game.rated && <p className="mt-2 text-xs text-slate-500">Casual game — no rating change.</p>}
+      {!game.rated && <p className="mt-2 text-xs text-ink-4">Casual game — no rating change.</p>}
 
       <div className="mt-4 space-y-2">
         <button

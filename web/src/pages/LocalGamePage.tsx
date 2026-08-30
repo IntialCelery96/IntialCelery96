@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { COLS, applyMove, createGame, type GameState } from '@connect4gg/engine';
+import { playerName } from '../lib/format';
 import { Board } from '../components/Board';
 
 /**
@@ -46,15 +47,15 @@ export function LocalGamePage() {
 
   const status =
     state.status === 'win'
-      ? `${state.winner === 1 ? 'Red' : 'Yellow'} wins`
+      ? `${playerName(state.winner!)} player wins`
       : state.status === 'draw'
         ? 'Draw — the board is full'
-        : `${state.turn === 1 ? 'Red' : 'Yellow'} to move`;
+        : `${playerName(state.turn)} player to move`;
 
   return (
     <div className="flex flex-col items-center py-4">
       <h1 className="mb-1 text-2xl font-bold">Local game</h1>
-      <p className="mb-5 text-sm text-slate-400">
+      <p className="mb-5 text-sm text-ink-3">
         Two players, one device. Nothing is saved or rated.
       </p>
 
@@ -62,8 +63,8 @@ export function LocalGamePage() {
         <span
           className={`h-4 w-4 rounded-full ${
             state.turn === 1
-              ? 'bg-gradient-to-br from-red-disc to-red-discDark'
-              : 'bg-gradient-to-br from-yellow-disc to-yellow-discDark'
+              ? 'bg-gradient-to-br from-p1 to-p1-deep'
+              : 'bg-gradient-to-br from-p2 to-p2-deep'
           }`}
         />
         <span className="text-lg font-medium" role="status">
@@ -97,7 +98,7 @@ export function LocalGamePage() {
         </Link>
       </div>
 
-      <p className="mt-4 font-mono text-xs text-slate-600">
+      <p className="mt-4 font-mono text-xs text-ink-4">
         {state.moves.map((m) => m + 1).join(' ') || 'No moves yet'}
       </p>
     </div>

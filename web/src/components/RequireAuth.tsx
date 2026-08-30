@@ -12,7 +12,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   const location = useLocation();
 
   if (loading) {
-    return <p className="py-20 text-center text-slate-400">Loading…</p>;
+    return <p className="py-20 text-center text-ink-3">Loading…</p>;
   }
 
   if (!user) {

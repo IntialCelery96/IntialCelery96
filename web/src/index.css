@@ -3,8 +3,41 @@
 @tailwind utilities;
 
 @layer base {
+  /**
+   * Fallback tokens, matching the Midnight theme in src/theme/themes.ts.
+   *
+   * The theme layer overwrites these on the root element at startup, so these
+   * values are only ever seen with JavaScript disabled. They exist so the page
+   * degrades to something readable rather than to unstyled black on black.
+   */
   :root {
     color-scheme: dark;
+
+    --c-bg: 2 6 23;
+    --c-surface: 15 23 42;
+    --c-surface-2: 30 41 59;
+    --c-line: 30 41 59;
+    --c-line-2: 51 65 85;
+    --c-ink: 241 245 249;
+    --c-ink-2: 203 213 225;
+    --c-ink-3: 148 163 184;
+    --c-ink-4: 100 116 139;
+    --c-accent: 14 165 233;
+    --c-accent-2: 56 189 248;
+    --c-on-accent: 255 255 255;
+    --c-accent-text: 125 211 252;
+    --c-good: 52 211 153;
+    --c-warn: 251 191 36;
+    --c-caution: 251 146 60;
+    --c-bad: 244 63 94;
+    --c-special: 232 121 249;
+    --c-board: 30 58 138;
+    --c-board-deep: 23 37 84;
+    --c-slot: 7 11 20;
+    --c-p1: 239 68 68;
+    --c-p1-deep: 185 28 28;
+    --c-p2: 250 204 21;
+    --c-p2-deep: 202 138 4;
   }
 
   html,
@@ -14,12 +47,12 @@
   }
 
   body {
-    @apply bg-slate-950 text-slate-100 antialiased;
+    @apply bg-bg text-ink antialiased;
   }
 
   /* Keep focus rings visible for keyboard users without ringing every click. */
   :focus-visible {
-    @apply outline-none ring-2 ring-sky-400 ring-offset-2 ring-offset-slate-950;
+    @apply outline-none ring-2 ring-accent-2 ring-offset-2 ring-offset-bg;
   }
 }
 
@@ -30,32 +63,32 @@
   }
 
   .btn-primary {
-    @apply btn bg-sky-500 text-white hover:bg-sky-400 active:bg-sky-600;
+    @apply btn bg-accent text-on-accent hover:bg-accent-2 active:bg-accent;
   }
 
   .btn-secondary {
-    @apply btn bg-slate-800 text-slate-100 hover:bg-slate-700 active:bg-slate-800;
+    @apply btn bg-surface-2 text-ink hover:bg-line-2 active:bg-surface-2;
   }
 
   .btn-danger {
-    @apply btn bg-rose-600/90 text-white hover:bg-rose-500;
+    @apply btn bg-bad/90 text-on-accent hover:bg-bad;
   }
 
   .btn-ghost {
-    @apply btn text-slate-300 hover:bg-slate-800 hover:text-white;
+    @apply btn text-ink-2 hover:bg-surface-2 hover:text-ink;
   }
 
   .card {
-    @apply rounded-xl border border-slate-800 bg-slate-900/60 p-5;
+    @apply rounded-xl border border-surface-2 bg-surface/60 p-5;
   }
 
   .input {
-    @apply w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100
-      placeholder:text-slate-500 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500;
+    @apply w-full rounded-lg border border-line-2 bg-surface px-3 py-2 text-sm text-ink
+      placeholder:text-ink-4 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent;
   }
 
   .label {
-    @apply mb-1.5 block text-sm font-medium text-slate-300;
+    @apply mb-1.5 block text-sm font-medium text-ink-2;
   }
 
   .chip {

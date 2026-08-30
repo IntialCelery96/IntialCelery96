@@ -47,21 +47,21 @@ const centerColumnControl: Lesson = {
     },
     {
       kind: 'board',
-      caption: 'Red owns the center; Yellow has taken an edge and is already worse.',
+      caption: 'The first player owns the centre; the second has taken an edge and is already worse.',
       moves: [3, 0, 3],
-      // Both of Red's centre discs: indices 3 and 10 are the bottom two cells
+      // Both of the first player's centre discs: 3 and 10 are the bottom two cells
       // of column 4. Highlighting an empty square would just ring nothing.
       highlight: [3, 10],
     },
     {
       kind: 'tryIt',
-      prompt: 'Red has opened in the center. You are Yellow. Where do you play?',
+      prompt: 'Your opponent opened in the centre. Where do you play?',
       moves: [3],
       // Stacking on the center is the standard reply; the two squares beside it
       // are the reasonable alternatives.
       answers: [3, 2, 4],
       explanation:
-        'Play on or next to the center. Stacking directly on top (column 4) denies Red the second center square; columns 3 and 5 keep you in the fight for the middle. An edge move hands Red a free advantage.',
+        'Play on or next to the centre. Stacking directly on top (column 4) denies your opponent the second centre square; columns 3 and 5 keep you in the fight for the middle. An edge move hands them a free advantage.',
     },
     {
       kind: 'prose',
@@ -74,7 +74,7 @@ const findTheWin: Puzzle = {
   slug: 'find-the-win',
   title: 'Find the Win',
   difficulty: 'beginner',
-  // Red has three stacked in the center column; Red is on move.
+  // The first player has three stacked in the centre column and is on move.
   moves: [3, 0, 3, 1, 3, 2],
   solver: 1,
   answers: [3],

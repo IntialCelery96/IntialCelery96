@@ -46,7 +46,7 @@ export function SetupPage() {
     return () => clearTimeout(timer);
   }, [username]);
 
-  if (loading) return <p className="py-20 text-center text-slate-400">Loading…</p>;
+  if (loading) return <p className="py-20 text-center text-ink-3">Loading…</p>;
   if (!user) return <Navigate to="/login" replace />;
   if (user.setupComplete) return <Navigate to="/play" replace />;
 
@@ -75,7 +75,7 @@ export function SetupPage() {
   return (
     <div className="mx-auto max-w-lg py-8">
       <h1 className="mb-1 text-2xl font-bold">Set up your profile</h1>
-      <p className="mb-6 text-sm text-slate-400">
+      <p className="mb-6 text-sm text-ink-3">
         Pick a username — this is how other players will see you.
       </p>
 
@@ -98,13 +98,13 @@ export function SetupPage() {
           />
           <p id="username-status" className="mt-1 text-xs" role="status">
             {username.length < 3 ? (
-              <span className="text-slate-500">3-20 characters, letters and numbers.</span>
+              <span className="text-ink-4">3-20 characters, letters and numbers.</span>
             ) : available === null ? (
-              <span className="text-slate-500">Checking…</span>
+              <span className="text-ink-4">Checking…</span>
             ) : available.ok ? (
-              <span className="text-emerald-400">{username} is available.</span>
+              <span className="text-good">{username} is available.</span>
             ) : (
-              <span className="text-rose-400">{available.reason}</span>
+              <span className="text-bad">{available.reason}</span>
             )}
           </p>
         </div>
@@ -120,7 +120,7 @@ export function SetupPage() {
 
         <div>
           <label htmlFor="bio" className="label">
-            Bio <span className="font-normal text-slate-500">(optional)</span>
+            Bio <span className="font-normal text-ink-4">(optional)</span>
           </label>
           <textarea
             id="bio"
@@ -134,7 +134,7 @@ export function SetupPage() {
 
         <div>
           <label htmlFor="country" className="label">
-            Country <span className="font-normal text-slate-500">(optional)</span>
+            Country <span className="font-normal text-ink-4">(optional)</span>
           </label>
           <input
             id="country"
@@ -144,11 +144,11 @@ export function SetupPage() {
             placeholder="US"
             maxLength={2}
           />
-          <p className="mt-1 text-xs text-slate-500">Two-letter country code.</p>
+          <p className="mt-1 text-xs text-ink-4">Two-letter country code.</p>
         </div>
 
         {error && (
-          <p className="rounded-lg bg-rose-950/60 px-3 py-2 text-sm text-rose-300" role="alert">
+          <p className="rounded-lg bg-bad/60 px-3 py-2 text-sm text-bad" role="alert">
             {error}
           </p>
         )}

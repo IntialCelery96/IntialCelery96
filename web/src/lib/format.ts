@@ -75,3 +75,20 @@ export function describeReason(reason: string | null): string {
 export function initials(name: string): string {
   return name.slice(0, 2).toUpperCase();
 }
+
+/**
+ * What to call each side.
+ *
+ * Not "Red" and "Yellow": the discs are themed, and under four of the five
+ * themes those names are simply wrong. Turn order is the one property that
+ * holds whatever the board looks like — the same reason chess says White and
+ * Black regardless of how a set is coloured.
+ */
+export function playerName(player: 1 | 2): string {
+  return player === 1 ? 'First' : 'Second';
+}
+
+/** Longer form, for screen readers and prose. */
+export function playerLabel(player: 1 | 2): string {
+  return player === 1 ? 'first player' : 'second player';
+}

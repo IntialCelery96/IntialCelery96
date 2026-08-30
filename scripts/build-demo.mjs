@@ -66,8 +66,13 @@ for (const file of chunks) {
 // Drop the original tags and the module preloads that point at removed files.
 html = html
   .replace(/<script[^>]*src="[^"]*"[^>]*><\/script>/g, '')
-  .replace(/<link[^>]*rel="modulepreload"[^>]*>/g, '')
-  .replace('</body>', literal(`${scripts}</body>`));
+  .replace(/<link[^>]*rel="modulepreload"[^>]*>/g, '');
+
+// index.html carries scripts of its own — the theme's anti-flash snippet — so
+// the expected closer count is whatever it already had plus one per chunk.
+const baselineClosers = (html.match(/<\/script>/gi) ?? []).length;
+
+html = html.replace('</body>', literal(`${scripts}</body>`));
 
 // Inline the favicon so the page carries its own icon.
 const favicon = readFileSync(path.join(webDir, 'public', 'favicon.svg'), 'utf8');
@@ -81,9 +86,10 @@ html = html.replace(/href="\/favicon\.svg"/g, literal(`href="${faviconData}"`));
 // literal, and an opening tag inside a script is harmless. Only `</script`
 // ends an element, so that is what has to come out at exactly the expected
 // count: one closer per block written, and nothing left unescaped inside them.
+const expected = baselineClosers + chunks.length;
 const closers = (html.match(/<\/script>/gi) ?? []).length;
-if (closers !== chunks.length) {
-  throw new Error(`Expected ${chunks.length} script closers, found ${closers}`);
+if (closers !== expected) {
+  throw new Error(`Expected ${expected} script closers, found ${closers}`);
 }
 for (const file of chunks) {
   const code = readFileSync(path.join(assetsDir, file), 'utf8');
@@ -98,9 +104,9 @@ for (const file of chunks) {
 // things that genuinely need one do not read as bugs. Injected here rather
 // than added to the app, so no shipped component carries a demo branch.
 const notice = `
-<div id="demo-note" style="position:fixed;left:50%;transform:translateX(-50%);bottom:12px;z-index:60;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 24px);padding:8px 12px;border-radius:10px;border:1px solid #1e293b;background:#0b1220ee;backdrop-filter:blur(6px);color:#94a3b8;font:400 12px/1.4 system-ui,-apple-system,sans-serif;box-shadow:0 10px 30px -12px #000">
+<div id="demo-note" style="position:fixed;left:50%;transform:translateX(-50%);bottom:12px;z-index:60;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 24px);padding:8px 12px;border-radius:10px;border:1px solid rgb(var(--c-line));background:rgb(var(--c-surface)/0.94);backdrop-filter:blur(6px);color:rgb(var(--c-ink-3));font:400 12px/1.4 system-ui,-apple-system,sans-serif;box-shadow:0 10px 30px -12px rgb(0 0 0 / 0.6)">
   <span>Demo build — everything runs in this page. Live opponents and accounts need the server.</span>
-  <button type="button" onclick="this.parentElement.remove()" style="border:0;background:#1e293b;color:#cbd5e1;border-radius:6px;padding:3px 8px;font:inherit;cursor:pointer">Got it</button>
+  <button type="button" onclick="this.parentElement.remove()" style="border:0;background:rgb(var(--c-surface-2));color:rgb(var(--c-ink-2));border-radius:6px;padding:3px 8px;font:inherit;cursor:pointer">Got it</button>
 </div>`;
 html = html.replace('</body>', literal(`${notice}</body>`));
 

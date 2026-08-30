@@ -45,7 +45,7 @@ export function RatingChart({ points }: { points: Point[] }) {
 
   if (!geometry) {
     return (
-      <p className="py-8 text-center text-sm text-slate-500">
+      <p className="py-8 text-center text-sm text-ink-4">
         Play a few rated games to build a rating history.
       </p>
     );
@@ -62,7 +62,7 @@ export function RatingChart({ points }: { points: Point[] }) {
         <span className="text-2xl font-bold tabular-nums">{latest.rating}</span>
         <span
           className={`text-sm font-medium ${
-            trend > 0 ? 'text-emerald-400' : trend < 0 ? 'text-rose-400' : 'text-slate-400'
+            trend > 0 ? 'text-good' : trend < 0 ? 'text-bad' : 'text-ink-3'
           }`}
         >
           {trend > 0 ? '+' : ''}
@@ -93,7 +93,7 @@ export function RatingChart({ points }: { points: Point[] }) {
               stroke="#1e293b"
               strokeWidth="1"
             />
-            <text x={padding.left - 6} y={y(value) + 4} textAnchor="end" className="fill-slate-500 text-[10px]">
+            <text x={padding.left - 6} y={y(value) + 4} textAnchor="end" className="fill-ink-4 text-[10px]">
               {value}
             </text>
           </g>
@@ -108,7 +108,7 @@ export function RatingChart({ points }: { points: Point[] }) {
             cx={x(index)}
             cy={y(point.rating)}
             r={points.length > 60 ? 0 : 2.5}
-            className={point.delta >= 0 ? 'fill-emerald-400' : 'fill-rose-400'}
+            className={point.delta >= 0 ? 'fill-good' : 'fill-bad'}
           >
             <title>
               {point.rating} ({point.delta >= 0 ? '+' : ''}

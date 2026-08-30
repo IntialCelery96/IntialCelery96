@@ -73,7 +73,7 @@ export function ChallengeToasts() {
   return (
     <div className="fixed bottom-4 right-4 z-50 flex w-80 flex-col gap-2">
       {notice && (
-        <div className="animate-fadeUp rounded-xl border border-slate-700 bg-slate-900 p-3 text-sm text-slate-300 shadow-xl">
+        <div className="animate-fadeUp rounded-xl border border-line-2 bg-surface p-3 text-sm text-ink-2 shadow-xl">
           {notice}
         </div>
       )}
@@ -81,11 +81,11 @@ export function ChallengeToasts() {
       {challenges.map((challenge) => (
         <div
           key={challenge.id}
-          className="animate-fadeUp rounded-xl border border-sky-700 bg-slate-900 p-4 shadow-xl"
+          className="animate-fadeUp rounded-xl border border-accent bg-surface p-4 shadow-xl"
           role="alert"
         >
           <p className="text-sm">
-            <span className="font-semibold text-sky-300">{challenge.from}</span> challenged you to{' '}
+            <span className="font-semibold text-accent-text">{challenge.from}</span> challenged you to{' '}
             <span className="font-medium capitalize">{challenge.mode}</span>
             {challenge.rated ? ' (rated)' : ' (casual)'}.
           </p>

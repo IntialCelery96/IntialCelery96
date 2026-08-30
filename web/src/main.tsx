@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, HashRouter } from 'react-router-dom';
 import { App } from './App';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './theme/ThemeProvider';
 import { installDemoSocket } from './lib/socket';
 import './index.css';
 
@@ -30,11 +31,13 @@ async function boot(): Promise<void> {
 
   createRoot(root!).render(
     <StrictMode>
-      <Router>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
-      </Router>
+      <ThemeProvider>
+        <Router>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </Router>
+      </ThemeProvider>
     </StrictMode>,
   );
 }

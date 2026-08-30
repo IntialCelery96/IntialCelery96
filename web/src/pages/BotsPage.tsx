@@ -9,12 +9,12 @@ import { getSocket } from '../lib/socket';
  * engine returns rather than by bot id, so a new bot inherits its band for free.
  */
 const DIFFICULTY_STYLE: Record<string, string> = {
-  Beginner: 'bg-emerald-500/15 text-emerald-300',
-  Easy: 'bg-teal-500/15 text-teal-300',
-  Moderate: 'bg-sky-500/15 text-sky-300',
-  Challenging: 'bg-amber-500/15 text-amber-300',
-  Hard: 'bg-orange-500/15 text-orange-300',
-  Expert: 'bg-rose-500/15 text-rose-300',
+  Beginner: 'bg-good/15 text-good',
+  Easy: 'bg-good/15 text-good',
+  Moderate: 'bg-accent/15 text-accent-text',
+  Challenging: 'bg-warn/15 text-warn',
+  Hard: 'bg-caution/15 text-caution',
+  Expert: 'bg-bad/15 text-bad',
 };
 
 /**
@@ -65,7 +65,7 @@ export function BotsPage() {
   return (
     <div>
       <h1 className="mb-1 text-2xl font-bold">Play a bot</h1>
-      <p className="mb-5 text-sm text-slate-400">
+      <p className="mb-5 text-sm text-ink-3">
         Six opponents, easiest first. Bot games are never rated, so you can experiment freely.
       </p>
 
@@ -99,18 +99,18 @@ export function BotsPage() {
             className="input w-44"
           >
             <option value="random">Random colour</option>
-            <option value="first">Red (first)</option>
-            <option value="second">Yellow (second)</option>
+            <option value="first">Go first</option>
+            <option value="second">Go second</option>
           </select>
         </div>
 
-        <p className="text-xs text-slate-500">
-          Red moves first — a real advantage in Connect 4.
+        <p className="text-xs text-ink-4">
+          Moving first is a real advantage in Connect 4.
         </p>
       </div>
 
       {error && (
-        <p className="mb-4 rounded-lg bg-rose-950/60 px-3 py-2 text-sm text-rose-300" role="alert">
+        <p className="mb-4 rounded-lg bg-bad/60 px-3 py-2 text-sm text-bad" role="alert">
           {error}
         </p>
       )}
@@ -119,16 +119,16 @@ export function BotsPage() {
         {bots.map((bot) => (
           <article key={bot.id} className="card flex flex-col">
             <div className="mb-4 flex items-center gap-3">
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-2xl">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-2 text-2xl">
                 {bot.avatar}
               </span>
               <div>
                 <h2 className="font-semibold">{bot.name}</h2>
                 <div className="flex items-center gap-2 text-xs">
-                  <span className={`chip ${DIFFICULTY_STYLE[bot.difficulty] ?? 'bg-slate-800 text-slate-300'}`}>
+                  <span className={`chip ${DIFFICULTY_STYLE[bot.difficulty] ?? 'bg-surface-2 text-ink-2'}`}>
                     {bot.difficulty}
                   </span>
-                  <span className="text-slate-400">~{bot.rating}</span>
+                  <span className="text-ink-3">~{bot.rating}</span>
                 </div>
               </div>
             </div>
