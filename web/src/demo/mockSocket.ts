@@ -126,6 +126,8 @@ export function createMockSocket(): GameSocket {
     game.over = over;
     if (game.timer !== null) clearTimeout(game.timer);
 
+    recordForReview(game, over);
+
     const won = over.winner === game.humanSeat;
     const swing = 12 + Math.floor(Math.random() * 10);
     const before = 1284;
@@ -191,6 +193,62 @@ export function createMockSocket(): GameSocket {
         scheduleBot();
       }
     }, thinkDelayMs(bot));
+  }
+
+  /**
+   * Files the finished game where the mock API can find it, so "Analyze game"
+   * on the post-game screen leads somewhere. Without this the game a player
+   * just finished is the one game on the site they cannot review.
+   */
+  function recordForReview(g: DemoGame, over: NonNullable<LiveGamePayload['over']>): void {
+    const now = new Date();
+    const started = new Date(now.getTime() - Math.max(30_000, g.state.moves.length * 8_000));
+
+    const seatSummary = (seat: SeatPayload) => ({
+      user: seat.botId
+        ? null
+        : {
+            id: seat.userId ?? `u_${seat.username}`,
+            username: seat.username,
+            avatarUrl: seat.avatarUrl,
+            avatarColor: fixtures.users.find((u) => u.username === seat.username)?.avatarColor
+              ?? '#334155',
+            bio: null,
+            country: null,
+            createdAt: started.toISOString(),
+            isBot: false,
+          },
+      botId: seat.botId,
+      botName: seat.botId ? (getBot(seat.botId)?.name ?? seat.botId) : null,
+      rating: seat.rating,
+      ratingDelta: null,
+    });
+
+    const winnerSeat = over.winner ? g.seats[over.winner] : null;
+
+    fixtures.recordPlayedGame({
+      id: g.id,
+      mode: g.mode,
+      rated: g.rated,
+      moves: serializeMoves(g.state.moves),
+      moveCount: g.state.moves.length,
+      result:
+        over.outcome === 'player1'
+          ? 'PLAYER1_WIN'
+          : over.outcome === 'player2'
+            ? 'PLAYER2_WIN'
+            : over.outcome === 'draw'
+              ? 'DRAW'
+              : 'ABORTED',
+      endReason: over.reason,
+      winnerId: winnerSeat && !winnerSeat.botId ? (winnerSeat.userId ?? null) : null,
+      player1: seatSummary(g.seats[1]),
+      player2: seatSummary(g.seats[2]),
+      initialMs: getMode(g.mode).initialMs,
+      incrementMs: getMode(g.mode).incrementMs,
+      startedAt: started.toISOString(),
+      endedAt: now.toISOString(),
+    });
   }
 
   function start(options: {

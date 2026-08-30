@@ -11,10 +11,25 @@ interface PlayerBarProps {
   isYou: boolean;
   /** True while it is this player's move. */
   active: boolean;
+  /**
+   * Whether the name links to the player's profile.
+   *
+   * Off during a live game: following it navigates away from the board, which
+   * from the player's side is indistinguishable from being thrown out of their
+   * own game.
+   */
+  linkProfile?: boolean;
 }
 
 /** One player's row above or below the board: disc colour, name, clock, status. */
-export function PlayerBar({ seat, player, clock, isYou, active }: PlayerBarProps) {
+export function PlayerBar({
+  seat,
+  player,
+  clock,
+  isYou,
+  active,
+  linkProfile = true,
+}: PlayerBarProps) {
   const disconnected = !seat.connected;
 
   return (
@@ -36,7 +51,7 @@ export function PlayerBar({ seat, player, clock, isYou, active }: PlayerBarProps
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          {seat.botId ? (
+          {seat.botId || !linkProfile ? (
             <span className="truncate font-semibold">{seat.username}</span>
           ) : (
             <Link

@@ -121,6 +121,7 @@ npm test                            # engine + server unit tests
 npm run typecheck                   # all three workspaces
 node scripts/bot-ladder.mjs 10      # verify the bot ladder still holds
 node scripts/e2e-smoke.mjs          # end-to-end, needs a running server
+npm run build:demo && npm run test:ui   # browser regression tests
 ```
 
 - **139 unit tests.** The engine's rules, ELO maths, matchmaking bands and bot
@@ -128,6 +129,12 @@ node scripts/e2e-smoke.mjs          # end-to-end, needs a running server
 - **`scripts/e2e-smoke.mjs`** registers two throwaway accounts and drives the
   real socket protocol: queueing, pairing, move rejection, a full game, rating
   updates, persistence, a bot game, and the auth guards.
+- **`scripts/regression-ui.mjs`** drives the built demo in a real browser and
+  asserts on geometry and behaviour rather than on text — that the bottom row
+  renders below the top one, that discs rest on the stack beneath them, that
+  clicking an opponent does not navigate out of a live game, and that the game
+  you just finished can be reviewed. Each check fails only if its specific bug
+  comes back. Needs `npx playwright install chromium` once.
 
 ## Design notes
 
@@ -166,6 +173,13 @@ shareable, so a socket without a session still connects — with a null identity
 It can join a room and receive broadcasts; every state-changing handler resolves
 an account first. See [docs/security.md](docs/security.md) for the full review of
 the auth, upload, and realtime surfaces.
+
+**The board is never flipped.** A chess board rotates 180° so your own pieces
+sit nearest you, and that works because chess pieces do not fall. Connect 4
+discs do — rotating the board makes them stack upward, and mirroring the columns
+puts column 1 on the right while the labels underneath still read left to right.
+Which side you are on belongs in the player bars, not in the geometry of the
+board.
 
 **The board is themed, so the sides are named by turn order.** Five themes
 change every colour including the board and the discs, which means "Red" and

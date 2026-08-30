@@ -84,6 +84,7 @@ export function WatchPage() {
           clock={game.clock}
           isYou={false}
           active={game.turn === 2 && !game.over}
+          linkProfile={Boolean(game.over)}
         />
       </div>
 
@@ -101,6 +102,7 @@ export function WatchPage() {
           clock={game.clock}
           isYou={false}
           active={game.turn === 1 && !game.over}
+          linkProfile={Boolean(game.over)}
         />
       </div>
 

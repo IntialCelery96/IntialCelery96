@@ -33,8 +33,6 @@ export interface BoardProps {
    * shown on the board than when it is only named in a sentence.
    */
   suggestion?: number | undefined;
-  /** Renders from player 2's side, so your own discs are always at the bottom. */
-  flipped?: boolean;
   /** Dims the board and blocks input, e.g. while waiting for an opponent. */
   disabled?: boolean;
   /** Smaller padding and text, for lesson diagrams and thumbnails. */
@@ -54,7 +52,6 @@ export function Board({
   highlight,
   lastMove,
   suggestion,
-  flipped = false,
   disabled = false,
   compact = false,
   label,
@@ -80,10 +77,19 @@ export function Board({
     onDrop?.(column);
   }
 
-  // Rows render top-down; the engine stores row 0 at the bottom, so the display
-  // order is reversed. Flipping for player 2 reverses it back.
-  const rowOrder = flipped ? ROW_KEYS : [...ROW_KEYS].reverse();
-  const columnOrder = flipped ? [...COLUMN_KEYS].reverse() : COLUMN_KEYS;
+  /**
+   * Rows render top-down; the engine stores row 0 at the bottom, so the display
+   * order is reversed.
+   *
+   * The board is never flipped for the second player. A chess board is rotated
+   * 180° so your own pieces sit nearest you, and that works because chess
+   * pieces do not fall. Connect 4 discs do: rotating the board makes them stack
+   * upward, which is simply wrong, and mirroring the columns puts column 1 on
+   * the right while the labels underneath still read left to right. Whose turn
+   * it is belongs in the player bars, not in the geometry of the board.
+   */
+  const rowOrder = [...ROW_KEYS].reverse();
+  const columnOrder = COLUMN_KEYS;
 
   // Where a hovered disc would land, so the preview sits in the real slot.
   const previewIndex =

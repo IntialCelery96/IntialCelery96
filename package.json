@@ -18,6 +18,10 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "db:migrate": "npm run db:migrate -w @connect4gg/server",
     "db:seed": "npm run db:seed -w @connect4gg/server",
-    "build:demo": "node scripts/build-demo.mjs"
+    "build:demo": "node scripts/build-demo.mjs",
+    "test:ui": "node scripts/regression-ui.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
   }
 }

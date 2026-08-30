@@ -256,8 +256,32 @@ function buildGames(): GameSummary[] {
 
 export const games: GameSummary[] = buildGames();
 
+/**
+ * Games played during this session.
+ *
+ * The demo has no database, so a game finished in the browser would otherwise
+ * be unreachable the moment it ended — and "review the game I just played" is
+ * the first thing anyone tries. The mock socket records finished games here and
+ * the mock API serves them alongside the fixtures.
+ */
+export const playedGames: GameSummary[] = [];
+
+export function recordPlayedGame(game: GameSummary): void {
+  playedGames.unshift(game);
+}
+
+/** Looks up a game by id, checking games played in this session first. */
+export function findGame(id: string): GameSummary | undefined {
+  return playedGames.find((g) => g.id === id) ?? games.find((g) => g.id === id);
+}
+
+/** Everything, newest first: this session's games ahead of the fixtures. */
+export function allGames(): GameSummary[] {
+  return [...playedGames, ...games];
+}
+
 export function gamesFor(username: string): GameSummary[] {
-  return games.filter(
+  return allGames().filter(
     (g) => g.player1.user?.username === username || g.player2.user?.username === username,
   );
 }

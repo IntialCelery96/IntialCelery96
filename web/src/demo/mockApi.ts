@@ -53,7 +53,7 @@ const routes: Route[] = [
   {
     method: 'GET',
     pattern: /^\/api\/games\/recent\/all$/,
-    handler: () => ({ games: fixtures.games.slice(0, 12) }),
+    handler: () => ({ games: fixtures.allGames().slice(0, 12) }),
   },
   {
     method: 'GET',
@@ -65,7 +65,7 @@ const routes: Route[] = [
     method: 'GET',
     pattern: /^\/api\/games\/([^/?]+)\/analysis$/,
     handler: (match) => {
-      const game = fixtures.games.find((g) => g.id === match[1]);
+      const game = fixtures.findGame(match[1]!);
       if (!game) throw new ApiError(404, 'That game has not finished, or does not exist');
       // The real analysis, run here rather than on a server.
       const { analyseGame, parseMoves } = engine();
@@ -76,7 +76,7 @@ const routes: Route[] = [
     method: 'GET',
     pattern: /^\/api\/games\/([^/?]+)$/,
     handler: (match) => {
-      const game = fixtures.games.find((g) => g.id === match[1]);
+      const game = fixtures.findGame(match[1]!);
       if (!game) throw new ApiError(404, 'No such game');
       return { game };
     },

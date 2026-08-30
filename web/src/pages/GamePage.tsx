@@ -171,6 +171,7 @@ export function GamePage() {
             clock={game.clock}
             isYou={mySeat === topSeat}
             active={game.turn === topSeat && !game.over}
+            linkProfile={Boolean(game.over)}
           />
         </div>
 
@@ -181,7 +182,6 @@ export function GamePage() {
           previewPlayer={mySeat ?? undefined}
           highlight={game.winningLine ?? undefined}
           lastMove={lastMoveIndex}
-          flipped={mySeat === 2}
           disabled={Boolean(game.over)}
           label={`Connect 4 game, ${modeInfo?.name ?? game.mode}`}
         />
@@ -193,6 +193,7 @@ export function GamePage() {
             clock={game.clock}
             isYou={mySeat === bottomSeat}
             active={game.turn === bottomSeat && !game.over}
+            linkProfile={Boolean(game.over)}
           />
         </div>
 
