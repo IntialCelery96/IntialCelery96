@@ -46,9 +46,11 @@ export function ReplayPage() {
       setPlaying(false);
       return;
     }
-    const timer = setTimeout(() => setPly((p) => p + 1), 900);
+    // Slower once analysis is on screen: there is a verdict to read at each
+    // step, and 900ms is not long enough to read one.
+    const timer = setTimeout(() => setPly((p) => p + 1), analysis ? 1800 : 900);
     return () => clearTimeout(timer);
-  }, [playing, ply, columns.length]);
+  }, [playing, ply, columns.length, analysis]);
 
   /**
    * The verdict on the move that produced the position on screen. `ply` counts
@@ -86,6 +88,34 @@ export function ReplayPage() {
     }
     return undefined;
   }, [columns, ply, position]);
+
+  // Arrow keys step the review. Registered whenever a game is loaded, not only
+  // once analysis exists, so the replay is navigable either way.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      // Never steal keys from a text field or a slider.
+      if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+
+      if (event.key === 'ArrowLeft') {
+        setPlaying(false);
+        setPly((p) => Math.max(0, p - 1));
+        event.preventDefault();
+      } else if (event.key === 'ArrowRight') {
+        setPlaying(false);
+        setPly((p) => Math.min(columns.length, p + 1));
+        event.preventDefault();
+      } else if (event.key === 'Home') {
+        setPlaying(false);
+        setPly(0);
+      } else if (event.key === 'End') {
+        setPlaying(false);
+        setPly(columns.length);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [columns.length]);
 
   async function runAnalysis(): Promise<void> {
     if (!gameId || analysing) return;
@@ -203,6 +233,7 @@ export function ReplayPage() {
             Move {ply} of {columns.length}
             {ply > 0 && ` — column ${columns[ply - 1]! + 1}`}
           </p>
+          <p className="text-center text-xs text-ink-4">Use ← and → to step through</p>
         </div>
       </section>
 
@@ -275,11 +306,12 @@ export function ReplayPage() {
           <AnalysisPanel
             analysis={analysis}
             current={currentMove}
+            currentPly={ply}
             player1Name={game.player1.user?.username ?? game.player1.botName ?? playerName(1)}
             player2Name={game.player2.user?.username ?? game.player2.botName ?? playerName(2)}
             onSelectPly={(target) => {
               setPlaying(false);
-              setPly(target);
+              setPly(Math.max(0, Math.min(columns.length, target)));
             }}
           />
         ) : (

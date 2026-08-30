@@ -145,15 +145,32 @@ describe('summaries', () => {
     });
   });
 
-  it('reports accuracy as the share of top-choice moves', () => {
+  it('scores accuracy out of 100, weighted by verdict', () => {
     const analysis = analyseGame(parseMoves('3344'), FAST);
     for (const player of [1, 2] as const) {
-      const s = analysis.players[player];
-      const total = s.best + s.good + s.inaccuracy + s.mistake + s.blunder + s.missedWin;
-      expect(s.accuracy).toBeCloseTo(total === 0 ? 0 : s.best / total, 6);
-      expect(s.accuracy).toBeGreaterThanOrEqual(0);
-      expect(s.accuracy).toBeLessThanOrEqual(1);
+      const summary = analysis.players[player];
+      expect(summary.accuracy).toBeGreaterThanOrEqual(0);
+      expect(summary.accuracy).toBeLessThanOrEqual(100);
+      expect(Number.isInteger(summary.accuracy)).toBe(true);
     }
+  });
+
+  it('scores a clean game above one with a blunder in it', () => {
+    // '3344' is quiet; '3031326' contains a blunder and a missed win.
+    const clean = analyseGame(parseMoves('3344'), FAST);
+    const messy = analyseGame(parseMoves('3031326'), FAST);
+
+    const cleanAvg = (clean.players[1].accuracy + clean.players[2].accuracy) / 2;
+    const messyAvg = (messy.players[1].accuracy + messy.players[2].accuracy) / 2;
+    expect(cleanAvg).toBeGreaterThan(messyAvg);
+  });
+
+  it('does not punish a sound move merely for not being the top choice', () => {
+    // A game of quiet, reasonable moves should not score near zero just because
+    // the engine would have picked differently.
+    const analysis = analyseGame(parseMoves('3241'), FAST);
+    const worst = Math.min(analysis.players[1].accuracy, analysis.players[2].accuracy);
+    expect(worst).toBeGreaterThan(50);
   });
 
   it('never reports a negative score drop', () => {
@@ -168,6 +185,98 @@ describe('summaries', () => {
     for (const move of analysis.moves) {
       if (move.quality === 'best') expect(move.scoreDrop).toBe(0);
     }
+  });
+});
+
+describe('every move is explained', () => {
+  it('gives a note to every move, not only the bad ones', () => {
+    const analysis = analyseGame(parseMoves('3241536'), FAST);
+    expect(analysis.moves.length).toBeGreaterThan(0);
+    for (const move of analysis.moves) {
+      expect(typeof move.note).toBe('string');
+      expect(move.note.length).toBeGreaterThan(10);
+    }
+  });
+
+  it('describes what a quiet move did on the board', () => {
+    const analysis = analyseGame([3], FAST);
+    expect(analysis.moves[0]!.note).toMatch(/centre/i);
+  });
+
+  it('calls out a double threat', () => {
+    // The first player builds an open-ended three: two winning squares at once.
+    const analysis = analyseGame(parseMoves('203645'), FAST);
+    const notes = analysis.moves.map((m) => m.note).join(' ');
+    expect(notes).toMatch(/two threats/i);
+  });
+
+  it('says when a defensive move was forced', () => {
+    // Ply 5 blocks a three-in-a-row. That is forced, not inspired, and the note
+    // should say so rather than praising it.
+    const analysis = analyseGame(parseMoves('303133'), FAST);
+    const blocking = analysis.moves.at(-1)!;
+    expect(blocking.player).toBe(2);
+    expect(blocking.note).toMatch(/forced/i);
+  });
+
+  it('names the winning move as the end of the game', () => {
+    const analysis = analyseGame(parseMoves('3031323'), FAST);
+    expect(analysis.moves.at(-1)!.note).toMatch(/four in a row/i);
+  });
+});
+
+describe('evaluation trace', () => {
+  it('reports an evaluation for every move, inside the range', () => {
+    const analysis = analyseGame(parseMoves('3241536'), FAST);
+    for (const move of analysis.moves) {
+      expect(move.evalAfter).toBeGreaterThanOrEqual(-1);
+      expect(move.evalAfter).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('is always from the first player\'s point of view', () => {
+    // The first player wins outright, so the trace must end at +1 rather than
+    // flipping with whoever happened to move last.
+    const analysis = analyseGame(parseMoves('3031323'), FAST);
+    expect(analysis.moves.at(-1)!.evalAfter).toBe(1);
+  });
+
+  it('swings toward the second player when the first blunders', () => {
+    // Player 1 hands over a win at ply 4 of this line.
+    const analysis = analyseGame(parseMoves('061526'), FAST);
+    const last = analysis.moves.at(-1)!;
+    expect(last.player).toBe(2);
+    // Player 2 just let player 1 win, so the first player is on top.
+    expect(last.evalAfter).toBeGreaterThan(0);
+  });
+});
+
+describe('brilliant moves', () => {
+  it('is not handed out for taking an obvious win', () => {
+    const analysis = analyseGame(parseMoves('3031323'), FAST);
+    expect(analysis.moves.at(-1)!.quality).toBe('best');
+  });
+
+  it('is not handed out for blocking a visible threat', () => {
+    // The block on ply 5 is the only move that holds, but the threat was in
+    // plain sight. Awarding brilliance here would fire on most defensive moves
+    // in most games and make the tier worthless.
+    const analysis = analyseGame(parseMoves('303133'), FAST);
+    expect(analysis.moves.at(-1)!.quality).toBe('best');
+  });
+
+  it('is rare in a quiet game', () => {
+    const analysis = analyseGame(parseMoves('3344556'), FAST);
+    expect(analysis.moves.every((m) => m.quality !== 'brilliant')).toBe(true);
+  });
+
+  it('when awarded, says why', () => {
+    // Search a handful of lines for one; if none turns up, the tier simply did
+    // not trigger, which is the expected common case.
+    const found = ['3031326', '203645', '061526', '3241536', '334455']
+      .flatMap((game) => analyseGame(parseMoves(game), FAST).moves)
+      .find((m) => m.quality === 'brilliant');
+    if (found) expect(found.note).toMatch(/only move/i);
   });
 });
 

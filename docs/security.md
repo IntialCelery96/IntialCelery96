@@ -82,6 +82,35 @@ is what makes a `/watch` link shareable with someone who has no account.
 `game:join` is rate limited because it is the only handler an anonymous socket
 can reach.
 
+## Names, bios and photos
+
+**Text is screened on a normalised form, not raw.** A substring blocklist is
+defeated by `sh1t`, `s-h-i-t` and `ѕhit` (Cyrillic es), so input is
+Unicode-folded, combining marks stripped, homoglyphs and leetspeak mapped to
+ASCII, separators removed and repeats collapsed before matching. Matching runs
+against two collapse forms, because collapsing runs to two lets "shiiiit"
+through while collapsing to one would turn "class" into "clas" and lose a real
+match.
+
+**False positives are treated as a real cost.** Terms that occur inside ordinary
+words are matched as whole words only, and an allowlist protects specific ones —
+"analysis" among them, which this site says constantly. The Scunthorpe cases
+have tests, because they are the ones that ship broken.
+
+**Photos default to off.** `AVATAR_UPLOADS=presets` refuses uploads and gives
+everyone the built-in avatars, so a deployment is family-friendly without
+anyone configuring it. `moderated` posts each re-encoded image to
+`IMAGE_MODERATION_URL` and refuses on any error or timeout — failing open would
+mean a classifier outage silently disables the check — and the server will not
+boot in that mode without the endpoint set. `open` accepts uploads unchecked and
+is for closed deployments only.
+
+**What this does not do.** No word list is complete, and none of this reads
+intent. It is one layer among several: usernames are length- and
+charset-constrained, bios are short, presets mean most accounts never upload
+anything, and there is no mechanism yet for reporting what gets through — see
+below.
+
 ## Accepted trade-offs
 
 **Registration reveals whether an email is registered.** `POST /api/auth/register`
@@ -112,5 +141,7 @@ Socket.IO Redis adapter and game state moved out of process.
 - **A session management screen.** Sessions are tracked with user agent and IP
   and can be revoked wholesale by a password change, but there is no UI listing
   them individually.
-- **Abuse reporting and moderation.** No mechanism for reporting a username or
-  bio, and no admin tooling to act on one.
+- **Abuse reporting and moderation.** No mechanism for reporting a username,
+  bio or photo, and no admin tooling to act on one. This is the largest
+  remaining gap in the safety story: screening catches what it can at the point
+  of entry, but nothing catches what gets past it.

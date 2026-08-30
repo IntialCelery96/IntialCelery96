@@ -171,6 +171,7 @@ export interface ModeInfo {
 // --- Post-game analysis -----------------------------------------------------
 
 export type MoveQuality =
+  | 'brilliant'
   | 'best'
   | 'good'
   | 'inaccuracy'
@@ -185,16 +186,20 @@ export interface MoveAnalysis {
   quality: MoveQuality;
   bestColumn: number;
   scoreDrop: number;
-  note: string | null;
+  note: string;
+  /** Position after the move, from the first player's view, in -1..1. */
+  evalAfter: number;
 }
 
 export interface PlayerSummary {
+  brilliant: number;
   best: number;
   good: number;
   inaccuracy: number;
   mistake: number;
   blunder: number;
   missedWin: number;
+  /** 0-100, weighted by verdict. */
   accuracy: number;
 }
 

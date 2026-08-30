@@ -22,7 +22,10 @@ strategy curriculum.
 | Replay scrubber and spectator links | ✅ |
 | Leaderboards, profiles, rating graphs, user search, follows | ✅ |
 | Strategy curriculum | 🚧 scaffold — one lesson, one puzzle, [roadmap](docs/curriculum-roadmap.md) |
-| Post-game analysis — missed wins, blunders, accuracy | ✅ |
+| Move-by-move game review with an evaluation graph | ✅ |
+| Five themes, including the board and discs | ✅ |
+| 80 preset avatars, with optional photo upload | ✅ |
+| Username and bio screening, presets-only photos by default | ✅ |
 
 ## Stack
 
@@ -163,6 +166,21 @@ shareable, so a socket without a session still connects — with a null identity
 It can join a room and receive broadcasts; every state-changing handler resolves
 an account first. See [docs/security.md](docs/security.md) for the full review of
 the auth, upload, and realtime surfaces.
+
+**The board is themed, so the sides are named by turn order.** Five themes
+change every colour including the board and the discs, which means "Red" and
+"Yellow" are wrong under four of them. The sides are "first" and "second" —
+the same reason chess names its sides by turn order rather than by how a
+particular set happens to be painted.
+
+**Photos are the one thing not screened locally.** Usernames and bios are, and
+screened properly: input is Unicode-folded, homoglyphs and leetspeak mapped to
+ASCII and separators stripped before matching, so `sh1t`, `s-h-i-t` and `ѕhit`
+all resolve to the same thing. Images cannot be judged that way, and a
+skin-tone or entropy heuristic would look like a safeguard while catching
+almost nothing — so `AVATAR_UPLOADS` defaults to `presets`, which refuses
+uploads outright, and `moderated` sends each image to a classifier you
+configure. See [docs/security.md](docs/security.md).
 
 **Analysis is anchored to tactical facts, not a grading curve.** The engine's
 evaluation units are arbitrary weights, so a "40-point drop" would mean nothing

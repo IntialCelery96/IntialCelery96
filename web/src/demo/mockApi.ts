@@ -20,14 +20,28 @@ const routes: Route[] = [
   {
     method: 'GET',
     pattern: /^\/api\/auth\/me$/,
-    handler: () => ({ user: fixtures.viewer, needsSetup: false, googleEnabled: false }),
+    handler: () => ({
+      user: signedIn ? fixtures.viewer : null,
+      needsSetup: false,
+      googleEnabled: false,
+    }),
   },
   {
     method: 'POST',
     pattern: /^\/api\/auth\/(login|register)$/,
-    handler: () => ({ user: fixtures.viewer, needsSetup: false }),
+    handler: () => {
+      signedIn = true;
+      return { user: fixtures.viewer, needsSetup: false };
+    },
   },
-  { method: 'POST', pattern: /^\/api\/auth\/logout$/, handler: () => ({ ok: true }) },
+  {
+    method: 'POST',
+    pattern: /^\/api\/auth\/logout$/,
+    handler: () => {
+      signedIn = false;
+      return { ok: true };
+    },
+  },
 
   {
     method: 'GET',
@@ -186,6 +200,16 @@ const routes: Route[] = [
 
 /** Query string of the request being handled, for handlers that need it. */
 let currentQuery = '';
+
+/**
+ * Whether the demo is currently signed in.
+ *
+ * The demo starts signed in so the play screens are reachable immediately, but
+ * signing out has to actually work — otherwise the sign-in and sign-up screens
+ * are unreachable and half the product is invisible. Signing in again restores
+ * the same account.
+ */
+let signedIn = true;
 
 /** Lazily required so the engine is only pulled in where it is used. */
 function engine() {
