@@ -1,30 +1,24 @@
 #!/usr/bin/env bash
-# Fetch the Connect 4 primary sources and push them where Claude Code can read
-# them. Run from anywhere; nothing is written outside a temp dir and the repo.
+# Fetch the Connect 4 primary sources that the Claude Code environment's egress
+# policy blocks, from a machine with open internet.
+#
+# Downloads first, into a directory that survives a Ctrl-C, then tries to push.
+# Never prompts for credentials: if the push cannot authenticate it says so and
+# leaves you a zip to attach instead.
 set -uo pipefail
 
 REPO="${C4_REPO:-https://github.com/IntialCelery96/IntialCelery96.git}"
 BRANCH="${C4_BRANCH:-claude/research-sources}"
-WORK="$(mktemp -d)"
-REPO_DIR="$WORK/repo"
-OUT="$REPO_DIR/docs/sources"
+OUT="${C4_OUT:-$HOME/c4-sources}"
+export GIT_TERMINAL_PROMPT=0   # fail fast instead of prompting for a username
 
 say() { printf '\033[36m>\033[0m %s\n' "$*"; }
-ok()  { printf '\033[32m OK \033[0m %s\n' "$*"; }
-bad() { printf '\033[31mMISS\033[0m %s\n' "$*"; }
+ok()  { printf '\033[32m ok \033[0m %s\n' "$*"; }
+bad() { printf '\033[31mmiss\033[0m %s\n' "$*"; }
 
-trap 'rm -rf "$WORK"' EXIT
+command -v curl >/dev/null || { bad "curl is required"; exit 1; }
 
-command -v git   >/dev/null || { bad "git is required"; exit 1; }
-command -v curl  >/dev/null || { bad "curl is required"; exit 1; }
-
-say "Cloning $REPO"
-git clone --quiet --filter=blob:none "$REPO" "$REPO_DIR" || {
-  bad "Clone failed. Check you are signed in to GitHub (gh auth login) and try again."
-  exit 1
-}
-mkdir -p "$OUT"
-
+mkdir -p "$OUT" || { bad "cannot write to $OUT"; exit 1; }
 MAN="$OUT/MANIFEST.md"
 {
   echo "# Connect 4 primary sources"
@@ -51,31 +45,21 @@ grab() { # grab <outfile> <url>
   fi
 }
 
-say "Downloading primary sources"
+say "Downloading into $OUT"
 
-# 1. Allis 1988, "A Knowledge-based Approach of Connect-Four" - the origin of the
-#    nine strategic rules (ClaimEven, BaseInverse, Vertical, AfterEven, ...).
+# Allis 1988 - the origin of the nine strategic rules (ClaimEven, AfterEven...).
 grab "allis-1988-thesis.pdf" \
   "https://www.informatik.uni-trier.de/~fernau/DSL0607/Masterthesis-Viergewinnt.pdf"
-
-# 2. Pomakis, "How to Play Connect Four Perfectly".
 grab "pomakis-expert-play.html" "https://www.pomakis.com/c4/expert_play.html"
-
-# 3. Tromp - exact game-theoretic values and the 8-ply database.
-grab "tromp-c4.html"     "https://tromp.github.io/c4/c4.html"
-grab "tromp-fhour.html"  "https://tromp.github.io/c4/fhour.html"
-
-# 4. Wikipedia, as raw wikitext (citations intact, no page chrome).
+grab "tromp-c4.html"            "https://tromp.github.io/c4/c4.html"
+grab "tromp-fhour.html"         "https://tromp.github.io/c4/fhour.html"
 grab "wikipedia-connect-four.wiki" \
   "https://en.wikipedia.org/w/index.php?title=Connect_Four&action=raw"
-
-# 5. Strongly Solving 7x6 Connect-Four on Consumer Grade Hardware (2025).
 grab "arxiv-2507.05267-strongly-solving.pdf" "https://arxiv.org/pdf/2507.05267"
 
-# 6. Pascal Pons' solver tutorial - every part, discovered from the sitemap
-#    rather than guessed, so we do not miss or invent chapters.
+# Pons' solver tutorial: chapters discovered from the sitemap, never guessed.
 say "Discovering blog.gamesolver.org chapters"
-SITEMAP="$WORK/sitemap.xml"
+SITEMAP="$OUT/.sitemap.xml"
 if curl -sSL --max-time 60 -o "$SITEMAP" "https://blog.gamesolver.org/sitemap.xml" 2>/dev/null \
    && [ -s "$SITEMAP" ]; then
   n=0
@@ -94,43 +78,68 @@ else
   bad "sitemap.xml unreachable - falling back to the index page"
   grab "gamesolver-index.html" "https://blog.gamesolver.org/solving-connect-four/01-introduction/"
 fi
+rm -f "$SITEMAP"
 
-# 7. The perfect solver, asked directly for the value of every opening move.
-#    This is what turns the solved-game table from "widely reported" into fact.
+# The perfect solver, asked for the value of every opening move. This is what
+# turns the solved-game table from "widely reported" into a verified fact.
 say "Querying the perfect solver for all 7 openings"
 SOLVE="$OUT/solver-openings.txt"
 {
   echo "Perfect-solver evaluation of each opening move."
   echo "Endpoint: https://connect4.gamesolver.org/solve?pos=<move sequence>"
   echo "Columns are 1-7 left to right. Empty pos = the initial position."
-  echo "A positive score means the side to move wins; 0 is a draw."
   echo
 } > "$SOLVE"
 for pos in "" 1 2 3 4 5 6 7; do
-  body=$(curl -sSL --max-time 45 \
-           -H 'Accept: application/json' \
+  body=$(curl -sSL --max-time 45 -H 'Accept: application/json' \
            -A 'Mozilla/5.0 (compatible; connect4-curriculum-research)' \
            "https://connect4.gamesolver.org/solve?pos=${pos}" 2>/dev/null)
   if [ -n "$body" ]; then
-    printf 'pos=%-2s %s\n' "${pos:-(start)}" "$body" >> "$SOLVE"
-    ok "solver pos=${pos:-(start)}"
+    printf 'pos=%-2s %s\n' "${pos:-start}" "$body" >> "$SOLVE"
+    ok "solver pos=${pos:-start}"
   else
-    printf 'pos=%-2s NO RESPONSE\n' "${pos:-(start)}" >> "$SOLVE"
-    bad "solver pos=${pos:-(start)}"
+    printf 'pos=%-2s NO RESPONSE\n' "${pos:-start}" >> "$SOLVE"
+    bad "solver pos=${pos:-start}"
   fi
   sleep 1
 done
 printf '| `solver-openings.txt` | see file | <https://connect4.gamesolver.org/> |\n' >> "$MAN"
 
 FOUND=$(find "$OUT" -type f ! -name MANIFEST.md | wc -l | tr -d ' ')
-say "$FOUND files in docs/sources"
-if [ "$FOUND" -eq 0 ]; then
-  bad "Nothing downloaded - not pushing an empty branch."
-  exit 1
+echo
+say "$FOUND files downloaded to $OUT"
+[ "$FOUND" -gt 0 ] || { bad "Nothing downloaded. Check your internet and re-run."; exit 1; }
+
+# Always leave an archive, so a failed push is never a dead end.
+ARCHIVE=""
+if command -v zip >/dev/null; then
+  ARCHIVE="$HOME/c4-sources.zip"; rm -f "$ARCHIVE"
+  (cd "$(dirname "$OUT")" && zip -qr "$ARCHIVE" "$(basename "$OUT")") || ARCHIVE=""
+elif command -v tar >/dev/null; then
+  ARCHIVE="$HOME/c4-sources.tar.gz"
+  tar -czf "$ARCHIVE" -C "$(dirname "$OUT")" "$(basename "$OUT")" || ARCHIVE=""
+fi
+[ -n "$ARCHIVE" ] && ok "Archive: $ARCHIVE"
+
+if [ "${C4_NO_PUSH:-0}" = "1" ]; then
+  say "C4_NO_PUSH=1 - skipping the push."
+  exit 0
 fi
 
-say "Committing to $BRANCH"
-cd "$REPO_DIR" || exit 1
+# Push. GIT_TERMINAL_PROMPT=0 means this fails immediately rather than asking
+# for a username, so an unauthenticated machine gets guidance, not a prompt.
+command -v git >/dev/null || { bad "git not installed - use the archive above."; exit 0; }
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+
+say "Cloning to push"
+if ! git clone --quiet --filter=blob:none "$REPO" "$TMP/repo" 2>/dev/null; then
+  bad "Clone failed - use the archive above instead."
+  exit 0
+fi
+mkdir -p "$TMP/repo/docs/sources"
+cp -R "$OUT/." "$TMP/repo/docs/sources/"
+cd "$TMP/repo" || exit 0
 git checkout --quiet -B "$BRANCH"
 git add docs/sources
 git config user.name  >/dev/null 2>&1 || git config user.name  "Connect4 research fetch"
@@ -138,24 +147,24 @@ git config user.email >/dev/null 2>&1 || git config user.email "robertcabezud@gm
 git commit --quiet -m "Add Connect 4 primary sources for curriculum research
 
 Downloaded from a machine with open internet; the Claude Code environment's
-egress policy blocks these hosts. See docs/sources/MANIFEST.md for what
-resolved and what did not." || { bad "Nothing new to commit"; exit 0; }
+egress policy blocks these hosts. See docs/sources/MANIFEST.md." 2>/dev/null
 
-say "Pushing"
+say "Pushing $BRANCH"
 for attempt in 1 2 3 4; do
-  if git push --quiet -u origin "$BRANCH"; then
-    ok "Pushed $BRANCH"
-    echo
-    ok "Done. Tell Claude: \"sources are on $BRANCH\""
+  if git push --quiet -u origin "$BRANCH" 2>/dev/null; then
+    echo; ok "Pushed. Tell Claude: \"sources are on $BRANCH\""
     exit 0
   fi
-  bad "push failed (attempt $attempt)"
-  sleep $((2 ** attempt))
+  [ "$attempt" -lt 4 ] && sleep $((2 ** attempt))
 done
 
-BUNDLE="$HOME/c4-sources.zip"
-bad "Could not push. Saving a bundle instead."
-(cd "$REPO_DIR/docs" && zip -qr "$BUNDLE" sources) \
-  && ok "Wrote $BUNDLE - attach it in the chat instead." \
-  || bad "zip unavailable; files were in $OUT (now cleaned up)"
-exit 1
+echo
+bad "Push could not authenticate (this is why git asked for a username)."
+echo
+echo "  Your GitHub account password will not work - GitHub removed password"
+echo "  auth in 2021. Pick either:"
+echo
+echo "    A. gh auth login     then re-run this script"
+echo "    B. Attach ${ARCHIVE:-$OUT} in the chat instead"
+echo
+exit 0
