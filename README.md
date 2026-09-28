@@ -21,7 +21,7 @@ strategy curriculum.
 | Resign, draw offers, rematch, reconnect handling | ✅ |
 | Replay scrubber and spectator links | ✅ |
 | Leaderboards, profiles, rating graphs, user search, follows | ✅ |
-| Strategy curriculum — 4 tiers, 20 lessons, 20 rated puzzles, every position proved in CI ([design and sources](docs/curriculum.md)) | ✅ |
+| Strategy curriculum — 4 tiers, 20 lessons, 29 rated puzzles that unlock as you go, every position proved in CI ([design and sources](docs/curriculum.md)) | ✅ |
 | Move-by-move game review with an evaluation graph | ✅ |
 | Five themes, including the board and discs | ✅ |
 | 80 preset avatars, with optional photo upload | ✅ |
@@ -124,10 +124,11 @@ node scripts/e2e-smoke.mjs          # end-to-end, needs a running server
 npm run build:demo && npm run test:ui   # browser regression tests
 ```
 
-- **379 unit tests.** The engine's rules, ELO maths, matchmaking bands and bot
+- **402 unit tests.** The engine's rules, ELO maths, matchmaking bands and bot
   behaviour; the server's clocks, queue and live-game state machine; and the
   curriculum — every lesson diagram replayed, every exercise and puzzle answer
-  proved by exhaustive search (`packages/engine/tests/content.test.ts`).
+  proved by exhaustive search, and the unlock rules walked end to end
+  (`packages/engine/tests/content.test.ts`).
 - **`scripts/e2e-smoke.mjs`** registers two throwaway accounts and drives the
   real socket protocol: queueing, pairing, move rejection, a full game, rating
   updates, persistence, a bot game, and the auth guards.
@@ -217,6 +218,14 @@ parity endgames were generated for the purpose and solved, so the odd/even
 theory the Intermediate tier teaches is demonstrated on positions whose verdicts
 are proofs. See [docs/curriculum.md](docs/curriculum.md) for the design and the
 sources it rests on.
+
+**Progress is a set of solved puzzles, and nothing else.** Each lesson ends
+with its puzzles; they open one at a time, and the next lesson opens when they
+are all solved. Which lessons are open is derived from the solved set by one
+function in the engine, so the server (which refuses attempts at locked
+puzzles and records solves), the web app (which draws the locks) and the demo
+agree by construction. Signed-in players' solves live on the account; anyone
+else's live in the browser and merge into the account on sign-in.
 
 **Ratings are per mode.** Blitz strength and Classical strength are genuinely
 different skills, so they are tracked separately, exactly as a chess site does.

@@ -38,6 +38,7 @@ async function main(): Promise<void> {
     const data = {
       title: puzzle.title,
       difficulty: puzzle.difficulty,
+      lesson: puzzle.lesson,
       theme: puzzle.theme,
       rating: puzzle.rating,
       prompt: puzzle.prompt,

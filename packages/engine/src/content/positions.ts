@@ -98,3 +98,39 @@ export const BOTH_ODD = [
 export const THREE_COLUMNS = [
   2, 3, 4, 3, 3, 2, 2, 2, 2, 2, 5, 4, 5, 4, 4, 4, 4, 1, 1, 5, 1, 1, 1, 0, 1, 6, 5, 5, 5, 6,
 ];
+
+// --- Added for the per-lesson puzzles ---------------------------------------
+
+/** A stack of three in column 3 amid other play; second player must cap it. */
+export const CAP_IN_TRAFFIC = [3, 3, 2, 1, 2, 4, 2];
+
+/** Column 4 completes a row with an open end and a rising diagonal at once. */
+export const CENTRE_DOUBLE = [1, 1, 2, 2, 5, 4, 4, 6, 6, 5, 5, 6];
+
+/** A quiet-looking middlegame from a bot game in which only column 7 survives. */
+export const ONLY_ONE_SAFE = [3, 3, 3, 3, 5, 4, 3, 5, 3, 6];
+
+/**
+ * Second player to move with an even threat in column 1 against the first
+ * player's even threat in column 7. Only follow-up in column 7 wins.
+ */
+export const PLAYING_SECOND = [
+  3, 2, 3, 3, 5, 3, 0, 3, 3, 2, 2, 2, 2, 4, 2, 1, 4, 5, 4, 0, 4, 4, 1, 4, 1, 1, 1, 1, 5, 5, 5, 6, 5,
+];
+
+/**
+ * Claimeven. The second player has an even threat in column 7; the first
+ * player has just played the bottom of column 1, and only claiming the even
+ * square above it wins.
+ */
+export const CLAIMEVEN = [
+  2, 3, 2, 3, 3, 3, 3, 3, 4, 2, 1, 2, 2, 4, 1, 4, 6, 4, 4, 2, 4, 1, 1, 1, 1, 5, 5, 5, 5, 5, 5, 6, 0,
+];
+
+/**
+ * Odd threats for both sides with one neutral square left in column 3. Second
+ * player to move; only the neutral square holds the draw.
+ */
+export const COUNTING_ONE_NEUTRAL = [
+  2, 3, 3, 2, 3, 4, 3, 3, 2, 3, 4, 2, 2, 4, 1, 4, 1, 4, 4, 0, 1, 1, 5, 1, 1, 5, 5, 5, 5, 5, 6,
+];

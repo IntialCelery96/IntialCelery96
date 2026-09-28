@@ -46,6 +46,7 @@ model User {
   challengesReceived  Challenge[] @relation("Challenged")
   following       Follow[]   @relation("Follower")
   followers       Follow[]   @relation("Following")
+  puzzleSolves    PuzzleSolve[]
 
   @@index([usernameLower])
   @@index([createdAt])
@@ -238,11 +239,26 @@ model Lesson {
   @@index([difficulty, course, order])
 }
 
+// A puzzle a user has solved. One row per (user, puzzle). The curriculum's
+// unlock state is derived from this set by the engine, never stored.
+model PuzzleSolve {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  puzzleSlug String
+  solvedAt   DateTime @default(now())
+
+  @@unique([userId, puzzleSlug])
+  @@index([userId])
+}
+
 model Puzzle {
   id          String @id @default(cuid())
   slug        String @unique
   title       String
   difficulty  String
+  // The lesson slug this puzzle sits at the end of.
+  lesson      String @default("")
   // A PuzzleTheme — what the puzzle drills.
   theme       String @default("winInOne")
   // Difficulty on the player rating scale.

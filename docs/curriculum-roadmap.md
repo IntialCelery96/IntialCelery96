@@ -1,8 +1,11 @@
 # Curriculum Roadmap
 
 The `/learn` section now ships the full first version of the curriculum:
-four tiers, seven courses, twenty lessons and twenty rated puzzles, every one
-of them proved against the engine in CI. The design, the sequencing and the
+four tiers, seven courses, twenty lessons and twenty-nine rated puzzles, every
+one of them proved against the engine in CI. Each lesson ends with its
+puzzles; they unlock in order, and finishing them unlocks the next lesson.
+Progress is kept on the account for signed-in players and in the browser for
+everyone else. The design, the sequencing and the
 sources are in [curriculum.md](curriculum.md); this file is only about what
 is still to build.
 
@@ -14,7 +17,8 @@ Content is data in [`packages/engine/src/content/`](../packages/engine/src/conte
 | --- | --- |
 | `courses.ts` | The course catalogue, one entry per course. |
 | `lessons-*.ts` | One file per tier. A lesson is a list of blocks. |
-| `puzzles.ts` | The puzzle set: position, solver, answers, theme, rating. |
+| `puzzles.ts` | The puzzle set: position, solver, answers, lesson, theme, rating. |
+| `progress.ts` | The unlock rules, derived from the set of solved puzzles. |
 | `positions.ts` | Move lists shared between lessons and puzzles. |
 | `sources.ts` | The references lessons cite. |
 
@@ -44,11 +48,11 @@ Ordered by how much they would change the experience.
 - **A floating puzzle rating.** Puzzles carry a seed rating today. Give them a
   Glicko-2 rating, deviation and volatility, and update puzzle and player on
   every attempt, the way Lichess does.
-- **Progress on the account.** A `LessonProgress` table keyed on
-  (user, lesson), and an attempt log for puzzles. The Learn page currently
-  remembers finished lessons per browser only.
-- **A spaced-repetition scheduler** over the attempt log: failed and slow
-  puzzles return sooner, solved ones later.
+- **An attempt log.** Solves are on the account (`PuzzleSolve`); failed
+  attempts and solve times are not recorded yet, and both a floating rating and
+  a spaced-repetition scheduler need them.
+- **A spaced-repetition scheduler** over that log: failed and slow puzzles
+  return sooner, solved ones later.
 - **Lessons from your own games.** Analysis already tags every move
   (`packages/engine/src/analysis.ts`). Map verdicts to puzzle themes and
   lesson slugs and surface "you missed three vertical wins this week — here is

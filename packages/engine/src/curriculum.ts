@@ -145,7 +145,8 @@ export type PuzzleTheme =
   | 'forcingSequence'
   | 'safeSquare'
   | 'parity'
-  | 'zugzwang';
+  | 'zugzwang'
+  | 'opening';
 
 export const PUZZLE_THEMES: readonly PuzzleTheme[] = [
   'winInOne',
@@ -156,6 +157,7 @@ export const PUZZLE_THEMES: readonly PuzzleTheme[] = [
   'safeSquare',
   'parity',
   'zugzwang',
+  'opening',
 ];
 
 export const PUZZLE_THEME_LABELS: Record<PuzzleTheme, string> = {
@@ -167,6 +169,7 @@ export const PUZZLE_THEME_LABELS: Record<PuzzleTheme, string> = {
   safeSquare: 'Safe square',
   parity: 'Odd and even',
   zugzwang: 'Zugzwang',
+  opening: 'Opening',
 };
 
 export function isPuzzleTheme(value: unknown): value is PuzzleTheme {
@@ -177,6 +180,12 @@ export interface Puzzle {
   slug: string;
   title: string;
   difficulty: Difficulty;
+  /**
+   * The lesson this puzzle drills. Puzzles sit at the end of their lesson and
+   * unlock in `order`; solving all of a lesson's puzzles unlocks the next
+   * lesson. See `content/progress.ts`.
+   */
+  lesson: string;
   theme: PuzzleTheme;
   /**
    * How hard the puzzle is, on the same scale as player ratings. Set by hand
@@ -193,6 +202,7 @@ export interface Puzzle {
   /** Every column that counts as solving it. */
   answers: number[];
   explanation: string;
+  /** Position within its lesson. Lower sorts first, and unlocks first. */
   order: number;
 }
 

@@ -15,12 +15,13 @@ This document is the design. The content is in
 1. [Shape](#shape)
 2. [The path](#the-path)
 3. [The puzzle library](#the-puzzle-library)
-4. [The training loop](#the-training-loop)
-5. [Methods, and the evidence for them](#methods-and-the-evidence-for-them)
-6. [Sources for the game itself](#sources-for-the-game-itself)
-7. [How the content is verified](#how-the-content-is-verified)
-8. [What comes next](#what-comes-next)
-9. [References](#references)
+4. [Progression: how the path unlocks](#progression-how-the-path-unlocks)
+5. [The training loop](#the-training-loop)
+6. [Methods, and the evidence for them](#methods-and-the-evidence-for-them)
+7. [Sources for the game itself](#sources-for-the-game-itself)
+8. [How the content is verified](#how-the-content-is-verified)
+9. [What comes next](#what-comes-next)
+10. [References](#references)
 
 ## Shape
 
@@ -31,8 +32,8 @@ what makes a learning path feel like a path rather than a pile of articles:
 | --- | --- | --- |
 | Tier | New to the game, Beginner, Intermediate, Advanced | New to Chess, Beginner, Intermediate, Advanced [[C1]](#c1) |
 | Course | 3–4 lessons on one theme (e.g. *Threat Theory*) | A course within a level [[C1]](#c1) |
-| Lesson | Prose, diagrams, a key idea, one or more "try it" exercises, sources | A lesson with interactive challenges [[C1]](#c1) |
-| Puzzle | A position with a themed, rated, server-graded answer | Rated puzzles by motif [[C2]](#c2) [[L1]](#l1) |
+| Lesson | Prose, diagrams, a key idea, one or more "try it" exercises, sources, and its puzzles at the end | A lesson with interactive challenges [[C1]](#c1) |
+| Puzzle | A position with a themed, rated, server-graded answer; each belongs to a lesson and unlocks in sequence | Rated puzzles by motif [[C2]](#c2) [[L1]](#l1) |
 | Play | The bot ladder, one bot per tier | Bots by rating |
 | Review | Move-by-move game analysis with tactical verdicts | Game Review [[C3]](#c3) |
 
@@ -119,28 +120,90 @@ should be able to demonstrate on a board afterwards.
 | 19 | Playing second | A plan: aim for even threats, kill odd lines, follow up by default | [[G1]](#g1) [[G7]](#g7) |
 | 20 | Endgame counting | Play a multi-column endgame to the end without a slip | [[G1]](#g1) [[G2]](#g2) |
 
+### Which puzzles end which lesson
+
+| Lesson | Puzzles at its end (in unlock order) |
+| --- | --- |
+| 1 How a game is won | Find the win · Three across · Down the diagonal |
+| 2 Threats, and how to stop them | Cap the stack · Stop the row |
+| 3 Win first, block second | Win, don't block · No win, so block |
+| 4 Centre column control | Centre of everything |
+| 5 Reading the whole board | The hidden diagonal |
+| 6 Stacks | Three high |
+| 7 Never give them the square | The poison square |
+| 8 Two threats, one block | Open-ended · Two lines cross |
+| 9 The 7 trap | Spring the 7 · Break the 7 |
+| 10 Your first moves | The first move |
+| 11 Odd and even threats | The odd threat |
+| 12 Follow-up | Follow up |
+| 13 Counting who runs out of moves | Three columns |
+| 14 Forcing moves | Force the block · Two forcing moves |
+| 15 A thinking routine | Only one survives |
+| 16 Who controls the zugzwang | Odd beats even · The lower threat wins · The only draw |
+| 17 The nine rules | Claimeven |
+| 18 What the solvers say | Punish the edge |
+| 19 Playing second | Hold the even square |
+| 20 Endgame counting | The last neutral square |
+
 ## The puzzle library
 
-Twenty puzzles, each tagged with a theme and a rating, graded on the server so
-the answer never reaches the browser. The theme tags exist so that a player can
+Twenty-nine puzzles, each tagged with a theme and a rating, graded on the
+server so the answer never reaches the browser. Every puzzle belongs to a
+lesson and sits at its end. The theme tags exist so that a player can
 drill one pattern at a time, and so that game review can later say "you missed
 a vertical win — here are the puzzles for that", which is how a chess site
 links its analysis to its training [[L1]](#l1) [[C3]](#c3).
 
 | Theme | What it drills | Puzzles | Ratings |
 | --- | --- | --- | --- |
-| Win in one | See your own four | 4 | 400–800 |
-| Block the four | See theirs, including diagonals | 3 | 450–700 |
-| Double threat | Open threes and crossing lines | 2 | 850–1000 |
+| Win in one | See your own four | 4 | 400–700 |
+| Block the four | See theirs, including diagonals and stacks | 5 | 450–800 |
+| Double threat | Open threes and crossing lines | 3 | 850–1000 |
 | The 7 trap | Spring it and break it | 2 | 1050–1100 |
-| Safe square | Avoid the poison square, and the slower loss | 1 | 900 |
+| Safe square | Avoid the poison square, and the slower loss | 2 | 900–1450 |
+| Opening | The centre, from an empty board and against an edge | 2 | 800–1700 |
 | Forcing sequence | Wins in two and three | 2 | 1250–1400 |
-| Odd and even | Single-threat endgames | 2 | 1300–1350 |
-| Zugzwang | Mixed threats, shared columns, the only draw | 4 | 1550–1850 |
+| Odd and even | Single-threat endgames and Claimeven | 3 | 1300–1750 |
+| Zugzwang | Mixed threats, shared columns, neutral squares, the only draw | 6 | 1550–1900 |
 
 Ratings are on the player scale and set by hand for now, each inside its
 tier's band (the test suite enforces that). They are the seed values for a
 puzzle rating that floats with solve rates; see [What comes next](#what-comes-next).
+
+## Progression: how the path unlocks
+
+The path is gated, the way a course on a chess site is: you cannot skip to
+the zugzwang material without having shown you can find a four. The rules are
+small and live in one place (`packages/engine/src/content/progress.ts`), so
+the server, the web app and the demo apply them identically:
+
+- Lessons open in teaching order. The first is always open; each later one
+  opens when the lesson before it is **complete**.
+- A lesson is complete when every puzzle at its end has been solved.
+- Within a lesson, puzzles open one at a time: the first as soon as the
+  lesson is open, each later one when the one before it is solved.
+- Solved puzzles stay open, so they can be revisited for the spaced repetition
+  the training loop asks for.
+
+The only state is the set of solved puzzle slugs. Everything else — which
+lessons are open, which puzzle is next, a progress count — is derived from that
+set. For a signed-in player the set lives on the account (one `PuzzleSolve`
+row per puzzle), is written by the server when it grades an attempt correct,
+and is what the server checks before it will grade an attempt at all: a locked
+puzzle refuses attempts with `PUZZLE_LOCKED`. Anonymous readers and the
+standalone demo keep the set in the browser and are gated client-side; the
+browser's copy is merged into the account on sign-in, so nothing done before
+signing up is lost.
+
+Why gate at all, given that chess sites let you browse freely? Two reasons
+from the method section below. Mastery learning [[M12]](#m12) holds the
+standard fixed and lets the time vary, and a gate is the simplest honest
+implementation of "master this before that". And the "try it" exercises inside
+a lesson are graded locally with the answers in the page; the puzzles at the
+end are graded on the server with the answers withheld, so they are the first
+point at which a reader has to *produce* the idea rather than recognise it —
+the retrieval practice that makes it stick [[M1]](#m1). Making them the gate
+means nobody gets to skip that step.
 
 ## The training loop
 
@@ -149,9 +212,10 @@ drill it, play, get told what you missed, go back. The same loop here, for one
 tier at a time:
 
 1. **Learn.** Take the tier's lessons in order. Do each exercise before reading
-   on; the exercise is the point of the lesson, not a quiz after it.
-2. **Drill.** Solve the tier's puzzles until they are fast. Come back to the
-   same set after a few days and again after a couple of weeks.
+   on; the exercise is the point of the lesson, not a quiz after it. Solve the
+   puzzles at the end: they are what opens the next lesson.
+2. **Drill.** Come back to the tier's puzzles after a few days and again after
+   a couple of weeks; they stay open once solved, and they should get fast.
 3. **Play.** Play the tier's bot. Alternate colours. Keep going until you win
    more than you lose.
 4. **Review.** Open the game review of every game. Each notable verdict maps
@@ -228,9 +292,11 @@ less of the variance than originally reported, though still a meaningful share
 training loop's *review* step exists to turn each game into a diagnosis. The
 roadmap item "lessons from your own games" is the automated version.
 
-**Master a tier before moving on.** Bloom's mastery learning proposes fixing
+**Master a lesson before moving on.** Bloom's mastery learning proposes fixing
 the standard and letting the time vary, rather than the reverse [[M12]](#m12).
-"Beat the tier's bot more often than not" is that standard, made concrete.
+The unlock rule is that standard made mechanical: the next lesson opens when
+this one's puzzles are solved, however long that takes. "Beat the tier's bot
+more often than not" is the same idea at the tier level, left to the player.
 
 **A thinking routine, not just knowledge.** Kotov's advice to list candidate
 moves before calculating any of them [[M8]](#m8), and Heisman's insistence on
@@ -286,7 +352,14 @@ every push and checks, for every lesson and puzzle:
   tactical exercises; and, for rule-of-thumb answers such as "take the
   centre", not losing by force within five plies.
 - Every puzzle's answer set is exactly the correct set by the same rules, keyed
-  on its theme.
+  on its theme. The two opening puzzles are the exception: a full-game solve
+  is out of scope, so the test pins them to the centre and the lesson cites
+  the published result.
+- Every lesson has at least one puzzle at its end, in the lesson's tier, and
+  the progression rules behave: a new player sees exactly one open lesson and
+  one open puzzle, puzzles open in order, a lesson opens only when the previous
+  one is complete, walking the path takes exactly as many solves as there are
+  puzzles, and a puzzle solved out of order opens nothing early.
 - The endgames the parity lessons rest on solve to the values the lessons
   claim: the first-player odd threat wins, odd beats even in different
   columns, the lower threat in a shared column wins, two odd threats draw.
@@ -317,9 +390,9 @@ feel like a chess site's.
   and update both sides on every attempt, as Lichess does [[L1]](#l1). The
   ELO machinery in `elo.ts` is a start; Glicko-2 is the better fit because
   puzzles are attempted far more often than games are played.
-- **Progress that follows the account.** A `LessonProgress` table keyed on
-  (user, lesson), replacing the per-browser record on the Learn page, and a
-  puzzle history so the review step can point at specific weaknesses.
+- **A puzzle attempt log.** Solves are on the account now; recording failed
+  attempts and solve times too is what a review step needs to point at
+  specific weaknesses, and what a floating rating needs as input.
 - **A spaced-repetition scheduler.** Failed and slow puzzles come back sooner;
   fast ones later, on the Cepeda gaps [[M2]](#m2) [[C4]](#c4).
 - **Lessons from your own games.** Game analysis already tags every move

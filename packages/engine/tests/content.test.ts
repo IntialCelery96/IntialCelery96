@@ -4,10 +4,16 @@ import {
   COURSES,
   DIFFICULTY_TARGETS,
   LESSONS,
+  LESSONS_BY_SLUG,
   PUZZLES,
   PUZZLE_THEMES,
   applyMove,
+  curriculumProgress,
   difficultyRank,
+  isLessonUnlocked,
+  isPuzzleUnlocked,
+  lessonForPuzzle,
+  puzzlesForLesson,
   immediateThreats,
   immediateWins,
   isPuzzleTheme,
@@ -167,9 +173,20 @@ describe('curriculum structure', () => {
       expect(puzzle.prompt.length).toBeGreaterThan(0);
       expect(puzzle.explanation.length).toBeGreaterThan(0);
     }
-    for (const difficulty of new Set(PUZZLES.map((p) => p.difficulty))) {
-      const orders = PUZZLES.filter((p) => p.difficulty === difficulty).map((p) => p.order);
-      expect(new Set(orders).size).toBe(orders.length);
+  });
+
+  it('puts at least one puzzle at the end of every lesson, in the lesson\'s tier, with unique order', () => {
+    for (const lesson of LESSONS) {
+      const puzzles = puzzlesForLesson(lesson.slug);
+      expect(puzzles.length, `${lesson.slug} has puzzles`).toBeGreaterThan(0);
+      expect(new Set(puzzles.map((p) => p.order)).size).toBe(puzzles.length);
+      for (const puzzle of puzzles) {
+        expect(puzzle.difficulty, `${puzzle.slug} tier`).toBe(lesson.difficulty);
+      }
+    }
+    for (const puzzle of PUZZLES) {
+      expect(LESSONS_BY_SLUG[puzzle.lesson], `${puzzle.slug} lesson exists`).toBeDefined();
+      expect(lessonForPuzzle(puzzle.slug)?.slug).toBe(puzzle.lesson);
     }
   });
 
@@ -329,6 +346,13 @@ function expectedAnswers(puzzle: Puzzle): number[] {
     case 'zugzwang':
       expect(empties(state), `${puzzle.slug} is small enough to solve`).toBeLessThanOrEqual(SOLVE_LIMIT);
       return bestMoves(state);
+    case 'opening':
+      // Not proved here: the value of the opening rests on the published
+      // solution (Allis 1988, Tromp), which this suite cannot re-derive. The
+      // claim is pinned instead: an opening puzzle asks for the centre, from
+      // an empty board or after a single opponent move.
+      expect(puzzle.moves.length).toBeLessThanOrEqual(1);
+      return [3];
   }
 }
 
@@ -358,5 +382,65 @@ describe('puzzles', () => {
       const sign = v > 0 ? 1 : v < 0 ? -1 : 0;
       expect(sign, name).toBe(verdict === 'win' ? 1 : verdict === 'draw' ? 0 : -1);
     }
+  });
+});
+
+// --- Progression -------------------------------------------------------------
+
+describe('progression', () => {
+  it('opens only the first lesson and its first puzzle to a new player', () => {
+    const progress = curriculumProgress([]);
+    expect(progress.solved).toBe(0);
+    expect(progress.total).toBe(PUZZLES.length);
+    expect(progress.lessons.map((l) => l.unlocked)).toEqual(
+      LESSONS.map((_, i) => i === 0),
+    );
+    const first = progress.lessons[0]!;
+    expect(first.puzzles.map((p) => p.unlocked)).toEqual(first.puzzles.map((_, i) => i === 0));
+    expect(progress.nextLesson).toBe(LESSONS[0]!.slug);
+    expect(progress.nextPuzzle).toBe(first.puzzles[0]!.slug);
+  });
+
+  it('unlocks puzzles in order within a lesson, and the next lesson when all are solved', () => {
+    const first = puzzlesForLesson(LESSONS[0]!.slug);
+    const second = LESSONS[1]!;
+    const solved: string[] = [];
+    for (const [i, puzzle] of first.entries()) {
+      expect(isPuzzleUnlocked(puzzle.slug, solved), `${puzzle.slug} open`).toBe(true);
+      const later = first[i + 1];
+      if (later) expect(isPuzzleUnlocked(later.slug, solved), `${later.slug} still locked`).toBe(false);
+      expect(isLessonUnlocked(second.slug, solved)).toBe(false);
+      solved.push(puzzle.slug);
+    }
+    expect(isLessonUnlocked(second.slug, solved)).toBe(true);
+    const progress = curriculumProgress(solved);
+    expect(progress.lessons[0]!.complete).toBe(true);
+    expect(progress.nextLesson).toBe(second.slug);
+    expect(progress.nextPuzzle).toBe(puzzlesForLesson(second.slug)[0]!.slug);
+  });
+
+  it('walks the whole curriculum in order and finishes with nothing left to do', () => {
+    const solved: string[] = [];
+    let steps = 0;
+    for (;;) {
+      const progress = curriculumProgress(solved);
+      if (progress.nextPuzzle === null) {
+        expect(progress.nextLesson).toBeNull();
+        break;
+      }
+      expect(isPuzzleUnlocked(progress.nextPuzzle, solved)).toBe(true);
+      solved.push(progress.nextPuzzle);
+      steps++;
+      expect(steps).toBeLessThanOrEqual(PUZZLES.length);
+    }
+    expect(solved.length).toBe(PUZZLES.length);
+    expect(curriculumProgress(solved).lessons.every((l) => l.complete)).toBe(true);
+  });
+
+  it('does not open a later lesson because of a puzzle solved out of order', () => {
+    const last = PUZZLES[PUZZLES.length - 1]!;
+    const progress = curriculumProgress([last.slug]);
+    expect(progress.lessons[1]!.unlocked).toBe(false);
+    expect(isPuzzleUnlocked(last.slug, [last.slug])).toBe(false);
   });
 });

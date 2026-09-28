@@ -165,10 +165,11 @@ const routes: Route[] = [
     method: 'GET',
     pattern: /^\/api\/puzzles$/,
     handler: () => ({
-      puzzles: fixtures.puzzles.map(({ slug, title, difficulty, theme, rating, order }) => ({
+      puzzles: fixtures.puzzles.map(({ slug, title, difficulty, lesson, theme, rating, order }) => ({
         slug,
         title,
         difficulty,
+        lesson,
         theme,
         rating,
         order,
@@ -181,9 +182,15 @@ const routes: Route[] = [
     handler: (match, body) => {
       const puzzle = fixtures.puzzles.find((p) => p.slug === match[1]);
       if (!puzzle) throw new ApiError(404, 'No such puzzle');
+      // The same gate the server applies to a signed-in player.
+      const { isPuzzleUnlocked } = engine();
+      if (!isPuzzleUnlocked(puzzle.slug, demoSolved)) {
+        throw new ApiError(403, 'Finish the puzzles before this one first', 'PUZZLE_LOCKED');
+      }
       const column = (body as { column?: number } | null)?.column;
       const correct = typeof column === 'number' && puzzle.answers.includes(column);
-      return { correct, explanation: correct ? puzzle.explanation : null };
+      if (correct) demoSolved.add(puzzle.slug);
+      return { correct, explanation: correct ? puzzle.explanation : null, recorded: correct };
     },
   },
   {
@@ -196,6 +203,26 @@ const routes: Route[] = [
       const { serializeMoves } = engine();
       const { answers: _answers, explanation: _explanation, ...rest } = puzzle;
       return { puzzle: { ...rest, moves: serializeMoves(puzzle.moves) } };
+    },
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/learn\/progress$/,
+    handler: () => ({ solved: [...demoSolved] }),
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/learn\/progress$/,
+    handler: (_match, body) => {
+      const solved = (body as { solved?: unknown } | null)?.solved;
+      if (Array.isArray(solved)) {
+        for (const slug of solved) {
+          if (typeof slug === 'string' && fixtures.puzzles.some((p) => p.slug === slug)) {
+            demoSolved.add(slug);
+          }
+        }
+      }
+      return { solved: [...demoSolved] };
     },
   },
 
@@ -233,6 +260,14 @@ const routes: Route[] = [
 
 /** Query string of the request being handled, for handlers that need it. */
 let currentQuery = '';
+
+/**
+ * The demo account's solved puzzles. The demo is "signed in", so the client
+ * reconciles its local copy with this set exactly as it would with a server;
+ * keeping it in memory means a reload starts the path afresh, which is what a
+ * demo should do.
+ */
+const demoSolved = new Set<string>();
 
 /**
  * Whether the demo is currently signed in.
