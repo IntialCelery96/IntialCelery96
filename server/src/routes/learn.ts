@@ -1,23 +1,34 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { parseBlocks } from '@connect4gg/engine';
+import { COURSES, difficultyRank, parseBlocks } from '@connect4gg/engine';
 import { prisma } from '../lib/db.js';
 import { HttpError } from '../middleware/auth.js';
 
 /**
  * Curriculum endpoints.
  *
- * Scaffold only — the shape is finished so lessons can be added as seed data,
- * but the library itself is one lesson and one puzzle deep. See
- * docs/curriculum-roadmap.md for what is meant to go here.
+ * Lessons and puzzles are rows seeded from `packages/engine/src/content/`.
+ * Courses are static — they are the table of contents, and change only when
+ * the content does — so they come straight from the engine.
+ *
+ * Tiers sort in teaching order ("new" before "beginner"), which is not their
+ * alphabetical order, so ordering is finished here rather than in SQL.
  */
 export async function learnRoutes(app: FastifyInstance): Promise<void> {
+  app.get('/api/courses', async () => ({ courses: COURSES }));
+
   app.get('/api/lessons', async () => {
-    const lessons = await prisma.lesson.findMany({
+    const rows = await prisma.lesson.findMany({
       where: { published: true },
-      orderBy: [{ difficulty: 'asc' }, { order: 'asc' }],
-      select: { slug: true, title: true, summary: true, difficulty: true, order: true },
+      select: { slug: true, title: true, summary: true, difficulty: true, course: true, order: true },
     });
+    const courseOrder = new Map(COURSES.map((c, i) => [c.id, i]));
+    const lessons = rows.sort(
+      (a, b) =>
+        difficultyRank(a.difficulty) - difficultyRank(b.difficulty) ||
+        (courseOrder.get(a.course) ?? Infinity) - (courseOrder.get(b.course) ?? Infinity) ||
+        a.order - b.order,
+    );
     return { lessons };
   });
 
@@ -35,6 +46,7 @@ export async function learnRoutes(app: FastifyInstance): Promise<void> {
         title: lesson.title,
         summary: lesson.summary,
         difficulty: lesson.difficulty,
+        course: lesson.course,
         order: lesson.order,
         blocks: parseBlocks(lesson.blocks),
       },
@@ -42,11 +54,14 @@ export async function learnRoutes(app: FastifyInstance): Promise<void> {
   });
 
   app.get('/api/puzzles', async () => {
-    const puzzles = await prisma.puzzle.findMany({
+    const rows = await prisma.puzzle.findMany({
       where: { published: true },
-      orderBy: [{ difficulty: 'asc' }, { order: 'asc' }],
-      select: { slug: true, title: true, difficulty: true, order: true },
+      select: { slug: true, title: true, difficulty: true, theme: true, rating: true, order: true },
     });
+    const puzzles = rows.sort(
+      (a, b) =>
+        difficultyRank(a.difficulty) - difficultyRank(b.difficulty) || a.order - b.order,
+    );
     return { puzzles };
   });
 
@@ -68,6 +83,9 @@ export async function learnRoutes(app: FastifyInstance): Promise<void> {
         slug: puzzle.slug,
         title: puzzle.title,
         difficulty: puzzle.difficulty,
+        theme: puzzle.theme,
+        rating: puzzle.rating,
+        prompt: puzzle.prompt,
         moves: puzzle.moves,
         solver: puzzle.solver,
         order: puzzle.order,

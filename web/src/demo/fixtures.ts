@@ -344,73 +344,8 @@ export const recentOpponents = users.slice(1, 9);
 
 // --- Curriculum ------------------------------------------------------------
 
-export const lessons = [
-  {
-    slug: 'center-column-control',
-    title: 'Center Column Control',
-    summary:
-      'Why the middle column is worth more than any other, and what it costs you to give it away.',
-    difficulty: 'beginner',
-    order: 1,
-  },
-];
-
-export const lessonBlocks = [
-  {
-    kind: 'prose' as const,
-    text: 'Connect 4 is played on a 7×6 board, and the 69 possible four-in-a-rows are not spread evenly across it. Some squares sit on many more of those lines than others, and the center column sits on the most.',
-  },
-  {
-    kind: 'prose' as const,
-    text: 'Count them: a disc in column 4 (the middle) belongs to up to 13 different winning lines. A disc in an outside column belongs to as few as 3. Every disc you place in the middle is doing four times the work.',
-  },
-  {
-    kind: 'keyIdea' as const,
-    text: 'With perfect play, the first player wins — but only by starting in the center column. Every other opening move throws the win away.',
-  },
-  {
-    kind: 'board' as const,
-    caption: 'The strongest opening move there is: straight down the middle.',
-    moves: [3],
-    highlight: [3],
-  },
-  {
-    kind: 'prose' as const,
-    text: 'The follow-up matters just as much. If your opponent opens in the center and you answer on the edge, you have conceded the most valuable real estate on the board for almost nothing in return.',
-  },
-  {
-    kind: 'board' as const,
-    caption: 'The first player owns the centre; the second has taken an edge and is already worse.',
-    moves: [3, 0, 3],
-    highlight: [3, 10],
-  },
-  {
-    kind: 'tryIt' as const,
-    prompt: 'Your opponent opened in the centre. Where do you play?',
-    moves: [3],
-    answers: [3, 2, 4],
-    explanation:
-      'Play on or next to the centre. Stacking directly on top (column 4) denies your opponent the second centre square; columns 3 and 5 keep you in the fight for the middle. An edge move hands them a free advantage.',
-  },
-  {
-    kind: 'prose' as const,
-    text: 'This is the first habit to build: when you have nothing better to do, play toward the middle. It is rarely the losing move, and it keeps the most winning lines available to you.',
-  },
-];
-
-export const puzzles = [
-  { slug: 'find-the-win', title: 'Find the Win', difficulty: 'beginner', order: 1 },
-];
-
-export const puzzleDetail = {
-  slug: 'find-the-win',
-  title: 'Find the Win',
-  difficulty: 'beginner',
-  moves: '303132',
-  solver: 1 as const,
-  order: 1,
-};
-
-export const puzzleAnswers = [3];
-export const puzzleExplanation =
-  'Column 4 completes a vertical four. Vertical threats are the easiest to miss because they build in one place — always scan your own columns before you look anywhere else.';
+/**
+ * The real content, served from the engine package rather than copied here,
+ * so the demo can never drift from what the seed script writes.
+ */
+export { COURSES as courses, LESSONS as lessons, PUZZLES as puzzles } from '@connect4gg/engine';

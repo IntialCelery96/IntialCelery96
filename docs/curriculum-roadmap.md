@@ -1,88 +1,60 @@
 # Curriculum Roadmap
 
-The `/learn` section currently ships as a **scaffold**: the data model, the API,
-the renderer and one seed lesson plus one seed puzzle, all wired end to end. The
-point of shipping it this thin is that everything below is now a content job
-rather than an engineering one — write the blocks, seed them, and the existing
-renderer displays them.
+The `/learn` section now ships the full first version of the curriculum:
+four tiers, seven courses, twenty lessons and twenty rated puzzles, every one
+of them proved against the engine in CI. The design, the sequencing and the
+sources are in [curriculum.md](curriculum.md); this file is only about what
+is still to build.
 
 ## How content is added
 
-A lesson is a row in the `Lesson` table whose `blocks` column is an array of
-[`LessonBlock`](../packages/engine/src/curriculum.ts) values:
+Content is data in [`packages/engine/src/content/`](../packages/engine/src/content/):
+
+| File | Holds |
+| --- | --- |
+| `courses.ts` | The course catalogue, one entry per course. |
+| `lessons-*.ts` | One file per tier. A lesson is a list of blocks. |
+| `puzzles.ts` | The puzzle set: position, solver, answers, theme, rating. |
+| `positions.ts` | Move lists shared between lessons and puzzles. |
+| `sources.ts` | The references lessons cite. |
+
+A lesson is a `Lesson` whose `blocks` are [`LessonBlock`](../packages/engine/src/curriculum.ts) values:
 
 | Block | Purpose |
 | --- | --- |
-| `prose` | A paragraph of explanation. |
-| `keyIdea` | A callout — the one sentence worth remembering. |
-| `board` | A diagram. `moves` is replayed from an empty board, so the position is always legal; `highlight` rings the squares under discussion. |
-| `tryIt` | An inline exercise. The reader plays a move and is told whether it was right. |
+| `prose` | A paragraph. |
+| `keyIdea` | The one sentence worth remembering. |
+| `board` | A diagram. `moves` replays from an empty board; `highlight` rings discs. |
+| `tryIt` | An exercise. The reader plays a move and is told whether it was right. |
+| `reference` | The sources the lesson rests on. Every lesson ends with one. |
 
-A puzzle is a row in the `Puzzle` table: a starting position (as a move list),
-which colour the solver plays, the accepted answers, and an explanation. Answers
-are graded server-side and never sent to the browser.
+Adding content means: write it, run `npm test -w @connect4gg/engine` (which
+proves every position and answer), then `npm run db:seed` to publish it. The
+seed script upserts by slug and unpublishes anything no longer in the content.
 
-Both render through `LessonBoard`, which wraps the same `Board` component the
-live game uses — so a diagram is guaranteed to look and behave like the real
-thing, and there is one place to fix a rendering bug.
-
-See `server/prisma/seed.ts` for the working example of each.
-
-## Planned topics
-
-Ordered roughly as they should be taught.
-
-### Beginner
-
-- **Center Column Control** — *shipped as the seed lesson.* Why the middle
-  column sits on the most winning lines, and why the first player's win depends
-  on taking it.
-- **Reading the board** — spotting your own three-in-a-rows and your opponent's
-  before they complete. The single biggest source of beginner losses.
-- **Vertical threats** — the easiest win to build and the easiest to miss,
-  because it grows in one column instead of across the board.
-- **Don't play under a threat** — why filling the square beneath an opponent's
-  winning square hands them the game.
-- **The double threat** — creating two winning squares at once so the opponent
-  can only block one. The first real winning technique.
-
-### Intermediate
-
-- **Odd/even threat theory** — the heart of Connect 4 strategy. The first player
-  wants threats on odd rows, the second player on even rows, because of who is
-  forced to fill in underneath. Explains why so many games are decided long
-  before the final move.
-- **Counting the parity** — working out, from a given position, which side
-  benefits from the board filling up.
-- **The 7 trap** — the classic beginner-killer: a shape that looks safe and
-  forces a loss several moves later.
-- **Other trap patterns** — the claimeven, the baseinverse, and the standard
-  shapes that recur in real games.
-- **Forcing sequences** — chaining threats so the opponent's replies are all
-  compelled, and you reach a won position by force rather than by hoping.
-
-### Advanced
-
-- **Zugzwang-style squeezes** — positions where every legal move loses, and how
-  to engineer them.
-- **Endgame counting** — calculating exactly how the remaining squares fill and
-  who runs out of safe moves first.
-- **Opening repertoire** — the strongest replies to each of the seven opening
-  moves, and where each transposes.
-- **Refuting an early edge move** — punishing the most common opening mistake.
+The content tests know how to prove an answer from the puzzle's theme or from a
+small table of horizons in the test file. A new tactical puzzle needs a line in
+that table saying how many plies its forced win takes; everything else is
+automatic.
 
 ## Planned features
 
-Beyond the content itself, the section is meant to grow these:
+Ordered by how much they would change the experience.
 
-- **Progress tracking** — a `LessonProgress` table keyed on (user, lesson), so
-  the index can show what has been completed.
-- **Puzzle streaks and a puzzle rating** — the same ELO machinery already used
-  for games, applied to puzzle solving.
-- **A daily puzzle** — one shared position per day, with a leaderboard.
-- **Lesson generation from your own games.** Analysis now annotates every move
-  of a finished game (`packages/engine/src/analysis.ts`), so the raw material
-  exists to say "you missed three vertical wins this week — here is the lesson
-  on spotting them" and route a player to the relevant material.
-- **Lesson-to-puzzle links** — finishing a lesson should offer the puzzles that
-  drill it.
+- **A floating puzzle rating.** Puzzles carry a seed rating today. Give them a
+  Glicko-2 rating, deviation and volatility, and update puzzle and player on
+  every attempt, the way Lichess does.
+- **Progress on the account.** A `LessonProgress` table keyed on
+  (user, lesson), and an attempt log for puzzles. The Learn page currently
+  remembers finished lessons per browser only.
+- **A spaced-repetition scheduler** over the attempt log: failed and slow
+  puzzles return sooner, solved ones later.
+- **Lessons from your own games.** Analysis already tags every move
+  (`packages/engine/src/analysis.ts`). Map verdicts to puzzle themes and
+  lesson slugs and surface "you missed three vertical wins this week — here is
+  the drill" on the profile.
+- **More puzzles per theme.** The endgame generator used for the parity
+  positions can produce many more; each is proved before it ships.
+- **A daily puzzle and a timed rush mode.**
+- **Worked opening lines** for the centre opening, with the solver's value at
+  each deviation.

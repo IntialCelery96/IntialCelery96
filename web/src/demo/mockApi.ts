@@ -137,32 +137,65 @@ const routes: Route[] = [
     handler: () => ({ opponents: fixtures.recentOpponents }),
   },
 
-  { method: 'GET', pattern: /^\/api\/lessons$/, handler: () => ({ lessons: fixtures.lessons }) },
+  { method: 'GET', pattern: /^\/api\/courses$/, handler: () => ({ courses: fixtures.courses }) },
+  {
+    method: 'GET',
+    pattern: /^\/api\/lessons$/,
+    handler: () => ({
+      lessons: fixtures.lessons.map(({ slug, title, summary, difficulty, course, order }) => ({
+        slug,
+        title,
+        summary,
+        difficulty,
+        course,
+        order,
+      })),
+    }),
+  },
   {
     method: 'GET',
     pattern: /^\/api\/lessons\/([^/?]+)$/,
     handler: (match) => {
-      const summary = fixtures.lessons.find((l) => l.slug === match[1]);
-      if (!summary) throw new ApiError(404, 'No such lesson');
-      return { lesson: { ...summary, blocks: fixtures.lessonBlocks } };
+      const lesson = fixtures.lessons.find((l) => l.slug === match[1]);
+      if (!lesson) throw new ApiError(404, 'No such lesson');
+      return { lesson };
     },
   },
-  { method: 'GET', pattern: /^\/api\/puzzles$/, handler: () => ({ puzzles: fixtures.puzzles }) },
+  {
+    method: 'GET',
+    pattern: /^\/api\/puzzles$/,
+    handler: () => ({
+      puzzles: fixtures.puzzles.map(({ slug, title, difficulty, theme, rating, order }) => ({
+        slug,
+        title,
+        difficulty,
+        theme,
+        rating,
+        order,
+      })),
+    }),
+  },
   {
     method: 'POST',
     pattern: /^\/api\/puzzles\/([^/?]+)\/attempt$/,
-    handler: (_match, body) => {
+    handler: (match, body) => {
+      const puzzle = fixtures.puzzles.find((p) => p.slug === match[1]);
+      if (!puzzle) throw new ApiError(404, 'No such puzzle');
       const column = (body as { column?: number } | null)?.column;
-      const correct = typeof column === 'number' && fixtures.puzzleAnswers.includes(column);
-      return { correct, explanation: correct ? fixtures.puzzleExplanation : null };
+      const correct = typeof column === 'number' && puzzle.answers.includes(column);
+      return { correct, explanation: correct ? puzzle.explanation : null };
     },
   },
   {
     method: 'GET',
     pattern: /^\/api\/puzzles\/([^/?]+)$/,
     handler: (match) => {
-      if (match[1] !== fixtures.puzzleDetail.slug) throw new ApiError(404, 'No such puzzle');
-      return { puzzle: fixtures.puzzleDetail };
+      const puzzle = fixtures.puzzles.find((p) => p.slug === match[1]);
+      if (!puzzle) throw new ApiError(404, 'No such puzzle');
+      // Same shape as the server: the answers stay out of the response.
+      const { serializeMoves } = engine();
+      const { answers: _answers, explanation: _explanation, ...rest } = puzzle;
+      return { puzzle: { ...rest, moves: serializeMoves(puzzle.moves) } };
     },
   },
 

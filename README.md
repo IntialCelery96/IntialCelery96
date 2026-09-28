@@ -21,7 +21,7 @@ strategy curriculum.
 | Resign, draw offers, rematch, reconnect handling | ✅ |
 | Replay scrubber and spectator links | ✅ |
 | Leaderboards, profiles, rating graphs, user search, follows | ✅ |
-| Strategy curriculum | 🚧 scaffold — one lesson, one puzzle, [roadmap](docs/curriculum-roadmap.md) |
+| Strategy curriculum — 4 tiers, 20 lessons, 20 rated puzzles, every position proved in CI ([design and sources](docs/curriculum.md)) | ✅ |
 | Move-by-move game review with an evaluation graph | ✅ |
 | Five themes, including the board and discs | ✅ |
 | 80 preset avatars, with optional photo upload | ✅ |
@@ -43,7 +43,7 @@ packages/engine/   Game rules, ELO, mode config, bots. Pure logic, no I/O.
 server/            Fastify API, Socket.IO gateway, Prisma schema.
 web/               React SPA.
 scripts/           Bot ladder benchmark and an end-to-end smoke test.
-docs/              Curriculum roadmap.
+docs/              Curriculum design and roadmap, security notes.
 ```
 
 The engine is a real package rather than a folder of helpers: the server needs
@@ -124,8 +124,10 @@ node scripts/e2e-smoke.mjs          # end-to-end, needs a running server
 npm run build:demo && npm run test:ui   # browser regression tests
 ```
 
-- **139 unit tests.** The engine's rules, ELO maths, matchmaking bands and bot
-  behaviour; the server's clocks, queue and live-game state machine.
+- **379 unit tests.** The engine's rules, ELO maths, matchmaking bands and bot
+  behaviour; the server's clocks, queue and live-game state machine; and the
+  curriculum — every lesson diagram replayed, every exercise and puzzle answer
+  proved by exhaustive search (`packages/engine/tests/content.test.ts`).
 - **`scripts/e2e-smoke.mjs`** registers two throwaway accounts and drives the
   real socket protocol: queueing, pairing, move rejection, a full game, rating
   updates, persistence, a bot game, and the auth guards.
@@ -204,6 +206,17 @@ another move didn't* — which is also why they hold at any search depth. Measur
 across a full game, depths 4 through 8 produce a materially identical
 classification, so the default is 6: about a second per game rather than
 thirteen. Results are cached on the game row.
+
+**The curriculum is data, and it is tested like code.** Lessons and puzzles
+live in `packages/engine/src/content/` as move lists and blocks. The engine's
+tests replay every diagram, check every highlight rings a disc, and prove every
+answer: a win-in-one puzzle's answers must be exactly the winning columns, a
+forcing puzzle's exactly the moves that force a win within its horizon, and an
+endgame puzzle's exactly the moves that hold its exhaustively-solved value. The
+parity endgames were generated for the purpose and solved, so the odd/even
+theory the Intermediate tier teaches is demonstrated on positions whose verdicts
+are proofs. See [docs/curriculum.md](docs/curriculum.md) for the design and the
+sources it rests on.
 
 **Ratings are per mode.** Blitz strength and Classical strength are genuinely
 different skills, so they are tracked separately, exactly as a chess site does.

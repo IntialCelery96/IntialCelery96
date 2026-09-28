@@ -225,6 +225,8 @@ model Lesson {
   title      String
   summary    String
   difficulty String
+  // The Course id this lesson belongs to — see packages/engine/src/content/.
+  course     String  @default("")
   // Ordered LessonBlock[] — see packages/engine/src/curriculum.ts.
   blocks     Json
   order      Int    @default(0)
@@ -233,7 +235,7 @@ model Lesson {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([difficulty, order])
+  @@index([difficulty, course, order])
 }
 
 model Puzzle {
@@ -241,6 +243,12 @@ model Puzzle {
   slug        String @unique
   title       String
   difficulty  String
+  // A PuzzleTheme — what the puzzle drills.
+  theme       String @default("winInOne")
+  // Difficulty on the player rating scale.
+  rating      Int    @default(1200)
+  // What the solver is asked to do.
+  prompt      String @default("Find the winning move.")
   // Columns replayed from an empty board to reach the starting position.
   moves       String
   // Which colour the solver plays: 1 or 2.
